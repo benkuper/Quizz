@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+@layer base {
+	html.kiosk-player,
+	body.kiosk-player {
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+		overflow-anchor: none;
+		overscroll-behavior: none;
+	}
+}
+
+@layer utilities {
+	/* Keep kiosk mode feeling “fixed”, while still allowing inner content to scroll if needed. */
+	.kiosk-player .kiosk-scroll {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+	.kiosk-player .kiosk-scroll::-webkit-scrollbar {
+		display: none;
+		width: 0;
+		height: 0;
+	}
+}

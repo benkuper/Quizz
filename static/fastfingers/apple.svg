@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Apple">
+  <rect width="256" height="256" rx="48" fill="#0b1220"/>
+  <path d="M140 56 C132 60 126 68 126 78" stroke="#22c55e" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <path d="M142 76 C166 66 184 72 196 88" stroke="#22c55e" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <path d="M128 92 C86 92 64 126 64 162 C64 204 92 224 128 224 C164 224 192 204 192 162 C192 126 170 92 128 92 Z" fill="#ef4444"/>
+  <circle cx="104" cy="146" r="12" fill="#0b1220" opacity="0.25"/>
+</svg>

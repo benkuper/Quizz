@@ -1,0 +1,187 @@
+{
+    "questionTypes": {
+        "media": "Media Interlude",
+        "qcm": "Multiple Choice Question",
+        "deblur": "Deblur the Image Question",
+        "comparison": "Comparison Question",
+        "sorting": "Sorting Question",
+        "estimate": "Estimation Question",
+        "fastFingers": "Fast Fingers Question",
+        "maplocation": "Map Location Question",
+        "draw": "Draw the Answer Question",
+        "perfectmatch": "Perfect Match Question"
+    },
+    "questions": [
+        {
+            "id": "intro",
+            "type": "media",
+            "question": "Intro",
+            "media": {
+                "kind": "video",
+                "src": "/media/intro.mp4",
+                "autoplay": true,
+                "muted": false,
+                "controls": false
+            }
+        },
+        {
+            "id": "paris",
+            "type": "qcm",
+            "time": 60,
+            "question": "What is the capital of France?",
+            "options": [
+                "Berlin",
+                "Madrid",
+                "Paris",
+                "Rome"
+            ],
+            "answers": [
+                "Paris"
+            ]
+        },
+        {
+            "id": "mars",
+            "type": "qcm",
+            "question": "Which planet is known as the Red Planet?",
+            "options": [
+                "Earth",
+                "Mars",
+                "Jupiter",
+                "Saturn"
+            ],
+            "answers": [
+                "Mars"
+            ]
+        },
+        {
+            "id": "intermede",
+            "type": "media",
+            "question": "Intermede",
+            "media": {
+                "kind": "video",
+                "src": "/media/intro.mp4",
+                "autoplay": true,
+                "muted": false,
+                "controls": false
+            }
+        },
+        {
+            "id": "ocean",
+            "type": "qcm",
+            "question": "What are the 2 largest oceans on Earth?",
+            "options": [
+                "Atlantic Ocean",
+                "Indian Ocean",
+                "Arctic Ocean",
+                "Pacific Ocean"
+            ],
+            "answers": [
+                "Pacific Ocean",
+                "Atlantic Ocean"
+            ]
+        },
+        {
+            "id": "sortNumbers",
+            "type": "sorting",
+            "question": "Arrange the following numbers in ascending order:",
+            "options": [
+                "42",
+                "7",
+                "19",
+                "3"
+            ],
+            "answers": [
+                "3",
+                "7",
+                "19",
+                "42"
+            ]
+        },
+        {
+            "id": "moonLanding",
+            "type": "estimate",
+            "question": "In which year did humans first land on the Moon?",
+            "estimate": {
+                "unit": "year",
+                "min": 1900,
+                "max": 2026,
+                "step": 1,
+                "scoring": {
+                    "maxPoints": 10,
+                    "decay": "linear",
+                    "zeroAt": 5,
+                    "correctWithin": 0
+                }
+            },
+            "answers": [
+                1969
+            ]
+        },
+        {
+            "id": "catClick",
+            "type": "fastFingers",
+            "time": 25,
+            "question": [
+                "Fast Fingers: click the CAT as fast as you can."
+            ],
+            "fastFingers": {
+                "shuffle": true,
+                "steps": [
+                    {
+                        "good": {
+                            "src": "/fastfingers/cat.svg",
+                            "alt": "Cat"
+                        },
+                        "bad": {
+                            "src": "/fastfingers/dog.svg",
+                            "alt": "Dog"
+                        }
+                    },
+                    {
+                        "good": {
+                            "src": "/fastfingers/apple.svg",
+                            "alt": "Apple"
+                        },
+                        "bad": {
+                            "src": "/fastfingers/banana.svg",
+                            "alt": "Banana"
+                        }
+                    },
+                    {
+                        "good": {
+                            "src": "/fastfingers/cat.svg",
+                            "alt": "Cat"
+                        },
+                        "bad": {
+                            "src": "/fastfingers/banana.svg",
+                            "alt": "Banana"
+                        }
+                    },
+                    {
+                        "good": {
+                            "src": "/fastfingers/apple.svg",
+                            "alt": "Apple"
+                        },
+                        "bad": {
+                            "src": "/fastfingers/dog.svg",
+                            "alt": "Dog"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "outro",
+            "type": "media",
+            "time": 12,
+            "question": "Thanks for playing!",
+            "media": {
+                "kind": "video",
+                "src": "/media/intro.mp4",
+                "autoplay": true,
+                "muted": false,
+                "controls": false
+            }
+        }
+    ]
+}

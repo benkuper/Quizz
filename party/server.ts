@@ -534,6 +534,15 @@ export default class QuizServer implements Party.Server {
                 this.state.lastRoundResults[pid] = { correct: perfect, points: correctCount };
                 return;
             }
+
+            // VR whack: answer is the number of targets tapped during the timer.
+            if (type === 'vrwhack') {
+                const n = Number(ans ?? 0);
+                const points = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+                this.state.players[pid].score += points;
+                this.state.lastRoundResults[pid] = { correct: points > 0, points };
+                return;
+            }
         });
 
         // Build optional round summary for projector feedback (review-only broadcast)

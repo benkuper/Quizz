@@ -68,6 +68,21 @@ export type QuizQuestionFastFingers = QuizQuestionBase & {
 	};
 };
 
+export type QuizQuestionVrWhack = QuizQuestionBase & {
+	type: 'vrwhack';
+	vrwhack?: {
+		// Optional list of images to use for the "mole".
+		// If empty/missing, the UI falls back to an emoji target.
+		targets?: Array<{ src: string; alt?: string }>;
+		// Optional hint text shown under the counter.
+		hint?: string;
+		// Optional UI tuning.
+		fovDeg?: number;
+		verticalFovDeg?: number;
+		targetSizeRem?: number;
+	};
+};
+
 export type QuizMediaKind = 'video' | 'image';
 
 export type QuizMediaItem = {
@@ -92,6 +107,7 @@ export type QuizQuestion =
 	| QuizQuestionSorting
 	| QuizQuestionEstimate
 	| QuizQuestionFastFingers
+	| QuizQuestionVrWhack
 	| QuizQuestionMedia
 	| (QuizQuestionBase & Record<string, unknown>);
 

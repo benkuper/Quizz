@@ -5,6 +5,7 @@
 	import EstimateView from './types/EstimateView.svelte';
 	import FastFingersView from './types/FastFingersView.svelte';
 	import MediaView from './types/MediaView.svelte';
+	import VrWhackView from './types/VrWhackView.svelte';
 
 	type Props = {
 		status: GameStatus;
@@ -36,6 +37,8 @@
 		<FastFingersView status={status} question={question as any} />
 	{:else if type === 'media'}
 		<MediaView status={status} question={question as any} onFinished={onMediaFinished} />
+	{:else if type === 'vrwhack'}
+		<VrWhackView status={status} question={question as any} />
 	{:else}
 		<div class="muted">Unsupported type: {type}</div>
 	{/if}

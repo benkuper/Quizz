@@ -48,6 +48,11 @@ export function resolvePartykitHost(): string {
 
 	// In dev, connect to the local PartyKit dev server on the same machine / LAN IP.
 	if (import.meta.env.DEV && typeof location !== 'undefined' && location.hostname && USE_LOCAL_PARTYKIT) {
+		// If the page is served over https://, browsers require wss:// for websockets.
+		// PartyKit dev itself is ws://, so we connect to the Vite dev server and let it proxy.
+		if (location.protocol === 'https:' && location.host) {
+			return location.host;
+		}
 		return `${location.hostname}:${LOCAL_PARTYKIT_PORT}`;
 	}
 
@@ -59,9 +64,12 @@ export function createQuizSocket(options: { role?: QuizRole; room?: string } = {
 	const role = options.role ?? 'player';
 	const room = options.room ?? DEFAULT_QUIZ_ROOM;
 	const query = role === 'player' ? undefined : { role };
+	const protocol =
+		typeof location !== 'undefined' && location.protocol === 'https:' ? ('wss' as const) : ('ws' as const);
 
 	return new PartySocket({
 		host: resolvePartykitHost(),
+		protocol,
 		room,
 		...(query ? { query } : {})
 	});

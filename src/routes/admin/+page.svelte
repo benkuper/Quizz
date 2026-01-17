@@ -54,6 +54,7 @@
 	}
 
 	function resetGameToLobby() {
+		console.log("Resetting game to lobby");
 		if (!confirm('Reset the game and go back to the lobby? Scores will be reset.')) return;
 		socket?.send(JSON.stringify({ type: 'admin_reset' }));
 	}

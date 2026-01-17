@@ -425,6 +425,10 @@
 			submitAnswer(payload);
 			return;
 		}
+		if (qType === 'vrwhack') {
+			submitAnswer(payload);
+			return;
+		}
 		// default: no-op for other types
 	}
 
@@ -433,6 +437,7 @@
 		if (qType === 'media') return false;
 		if (qType === 'estimate') return String(answer ?? '').trim().length > 0;
 		if (qType === 'fastFingers') return false;
+		if (qType === 'vrwhack') return false;
 		if (Array.isArray(answer)) return answer.length > 0;
 		return Boolean(answer);
 	}
@@ -601,7 +606,7 @@
 						/>
 					{/key}
 
-					{#if qType !== 'fastFingers' && qType !== 'media'}
+					{#if qType !== 'fastFingers' && qType !== 'media' && qType !== 'vrwhack'}
 						<button
 							class="w-full rounded-2xl bg-indigo-500 px-4 py-4 text-base font-bold text-white active:scale-[0.99] disabled:opacity-60"
 							disabled={!canSubmit()}

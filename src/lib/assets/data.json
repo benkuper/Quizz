@@ -84,6 +84,12 @@
             ]
         },
         {
+            "id":"whackTargets",
+            "type":"vrwhack",
+            "time":3000,
+            "question":"Whack as many targets as you can!"
+        },
+        {
             "id": "sortNumbers",
             "type": "sorting",
             "question": "Arrange the following numbers in ascending order:",

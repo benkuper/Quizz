@@ -39,15 +39,16 @@ npm run dev
 
 4) Open the views:
 
-- Player view: http://localhost:5173/
-- Admin view: http://localhost:5173/admin
-- Projector view: http://localhost:5173/projector
-- All-in-one view: http://localhost:5173/allviews
+- Player view: https://localhost:5173/
+- Admin view: https://localhost:5173/admin
+- Projector view: https://localhost:5173/projector
+- All-in-one view: https://localhost:5173/allviews
 
 Notes:
 
 - The frontend is started with `--host 0.0.0.0` so phones on your LAN can open it.
 - PartyKit dev runs on port `1999` by default in this project.
+- When running the frontend on `https://` (needed for motion sensors), websockets are proxied through Vite so the browser connects via `wss://`.
 
 ## How to run an actual quiz (what to click)
 
@@ -74,6 +75,10 @@ Media questions (`type: "media"`) are “interludes” (no player answers).
 2) On each phone (same Wi‑Fi), open:
 
 `http://192.168.1.50:5173/`
+
+If you enabled HTTPS dev (default in this repo), use:
+
+`https://192.168.1.50:5173/`
 
 If players can load the page but don’t connect to realtime, set a PartyKit host override:
 
@@ -134,6 +139,27 @@ The frontend connects to PartyKit using `VITE_PARTYKIT_HOST`. For production you
 This repo currently uses `@sveltejs/adapter-auto` (see `svelte.config.js`), so pick a supported target (Vercel/Netlify/etc) or switch adapters as needed.
 
 ## Troubleshooting
+
+### HTTPS dev (motion sensors) without certificate warnings
+
+This repo runs `npm run dev` over HTTPS by default so motion sensors work.
+
+- On your dev machine: the HTTPS certificate is generated via `vite-plugin-mkcert` and should be trusted automatically.
+- On phones/tablets: you must install the mkcert *root CA* on the device to avoid warnings.
+
+Mobile trust (summary):
+
+1) On your dev machine, find the mkcert root CA location:
+
+`npx mkcert -CAROOT`
+
+2) Copy `rootCA.pem` to your phone.
+
+3) iOS:
+- Install the profile: Settings → “Profile Downloaded”
+- Enable trust: Settings → General → About → Certificate Trust Settings → enable full trust
+
+If you don’t install the CA on mobile, you can still proceed past the warning, but some browsers/features may behave differently.
 
 - Projector/admin loads but stays disconnected: make sure `npm run party:dev` is running, and check `VITE_PARTYKIT_HOST`.
 - Phones connect on localhost but not on LAN: open the site via your machine IP (not `localhost`) and/or set `VITE_PARTYKIT_HOST=<ip>:1999`.

@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 
 function parseLocalpartyFlag(argv) {
 	let enabled = false;
+	let https = false;
 	const forwarded = [];
 
 	for (const arg of argv) {
@@ -21,13 +22,24 @@ function parseLocalpartyFlag(argv) {
 			continue;
 		}
 
+		if (arg === '--https') {
+			https = true;
+			continue;
+		}
+
+		if (arg.startsWith('--https=')) {
+			const value = arg.slice('--https='.length);
+			https = /^(1|true)$/i.test(value);
+			continue;
+		}
+
 		forwarded.push(arg);
 	}
 
-	return { enabled, forwarded };
+	return { enabled, https, forwarded };
 }
 
-const { enabled: useLocalParty, forwarded } = parseLocalpartyFlag(process.argv.slice(2));
+const { enabled: useLocalParty, https: useHttps, forwarded } = parseLocalpartyFlag(process.argv.slice(2));
 
 const env = { ...process.env };
 if (useLocalParty) {
@@ -35,6 +47,13 @@ if (useLocalParty) {
 	env.VITE_USE_LOCAL_PARTYKIT = 'true';
 	// eslint-disable-next-line no-console
 	console.log('[dev] --localparty enabled -> VITE_USE_LOCAL_PARTYKIT=true');
+}
+
+if (useHttps) {
+	// Vite config reads this to enable HTTPS.
+	env.VITE_HTTPS_DEV = 'true';
+	// eslint-disable-next-line no-console
+	console.log('[dev] --https enabled -> VITE_HTTPS_DEV=true');
 }
 
 // Run `vite` via PATH (npm scripts include node_modules/.bin). Using `shell: true`

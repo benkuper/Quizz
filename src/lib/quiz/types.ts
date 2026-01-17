@@ -4,6 +4,15 @@ export type QuizQuestionBase = {
 	id: string;
 	type: string;
 	question: string | string[];
+	// Optional audio cue played on players' phones when the question appears.
+	// Recommended: a relative URL like "media/my-sound.mp3" so subfolder deploys work.
+	introSound?: string;
+	// Optional vibration patterns.
+	// If set, the player will vibrate with this pattern when the question appears.
+	// If not set, the question appearance will not vibrate.
+	vibration?: import('$lib/config/haptics.svelte').VibrationPattern;
+	// Optional vibration when leaving the question (question -> review).
+	vibrationEnd?: import('$lib/config/haptics.svelte').VibrationPattern;
 	time?: number;
 };
 

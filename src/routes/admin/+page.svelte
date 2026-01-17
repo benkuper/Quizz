@@ -58,6 +58,10 @@
 		socket?.send(JSON.stringify({ type: 'admin_reset' }));
 	}
 
+	function vibrateAll() {
+		socket?.send(JSON.stringify({ type: 'admin_vibrate' }));
+	}
+
 	function removeOfflinePlayers() {
 		socket?.send(JSON.stringify({ type: 'admin_remove_offline' }));
 	}
@@ -85,236 +89,261 @@
 		const min = Math.round(sec / 60);
 		return `${min}m ago`;
 	}
+
+	const status = $derived(String(gameState?.status ?? ''));
+	const statusPill = $derived.by(() => {
+		switch (status) {
+			case 'lobby':
+				return 'bg-slate-500/15 text-slate-200 ring-slate-400/20';
+			case 'question':
+				return 'bg-indigo-500/15 text-indigo-100 ring-indigo-400/20';
+			case 'review':
+				return 'bg-amber-500/15 text-amber-100 ring-amber-400/20';
+			case 'finished':
+				return 'bg-emerald-500/15 text-emerald-100 ring-emerald-400/20';
+			default:
+				return 'bg-white/5 text-slate-200 ring-white/10';
+		}
+	});
+
+	const connectedDot = $derived(connected ? 'bg-emerald-400' : 'bg-rose-400');
+
+	const currentQuestionLine = $derived.by(() => {
+		const q = gameState?.question;
+		if (!q) return '—';
+		const text = Array.isArray(q.question) ? q.question.join(' ') : String(q.question ?? '');
+		const type = String(q.type ?? '');
+		const timer = type === 'media' ? '—' : `${gameState?.timer ?? 0}s`;
+		return `${text} · ${type}${type ? '' : '—'} · ${timer}`;
+	});
+
+	const btnBase =
+		'inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40';
+	const btnPrimary = `${btnBase} bg-indigo-500/15 text-indigo-100 ring-indigo-400/20 hover:bg-indigo-500/20`;
+	const btnDanger = `${btnBase} bg-rose-500/15 text-rose-100 ring-rose-400/20 hover:bg-rose-500/20`;
+	const btnNeutral = `${btnBase} bg-white/5 text-slate-100 ring-white/10 hover:bg-white/10`;
 </script>
 
-<div class="admin-panel">
-	<h1>Admin Control</h1>
+<div class="min-h-screen w-full">
+	<header
+		class="sticky top-0 z-10 border-b border-white/10 bg-black/30 px-4 py-3 backdrop-blur"
+	>
+		<div class="flex items-center justify-between gap-3">
+			<div class="flex min-w-0 items-center gap-2">
+				<span
+					class={`h-2.5 w-2.5 shrink-0 rounded-full ${connectedDot}`}
+					title={connected ? 'Online' : 'Offline'}
+				></span>
+				<h1 class="truncate text-sm font-semibold tracking-wide text-slate-100">Admin</h1>
+				<span
+					class={`inline-flex items-center rounded-md px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ring-1 ring-inset ${statusPill}`}
+				>
+					{status || '—'}
+				</span>
+			</div>
 
-	<div class="status-indicator" class:on={connected}>
-		{connected ? 'Connected' : 'Disconnected'}
-	</div>
-
-	{#if gameState}
-		<div class="dashboard">
-			<section class="game-state">
-				<h2>Game Status: <span class="badge">{gameState.status}</span></h2>
-
-				{#if gameState.question}
-					<div class="current-q">
-						<h3>Current Q: {gameState.question.question}</h3>
-						<p>Type: {gameState.question.type}</p>
-						<p>Timer: {gameState.question.type === 'media' ? '—' : `${gameState.timer}s`}</p>
-					</div>
+			<div class="flex items-center gap-2">
+				{#if gameState?.status === 'lobby'}
+					<button class={btnPrimary} onclick={startGame} title="Start game">
+						<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M8 5v14l11-7z" />
+						</svg>
+						<span class="hidden sm:inline">Start</span>
+					</button>
+				{:else if gameState?.status === 'review' || gameState?.status === 'question'}
+					<button class={btnPrimary} onclick={nextQuestion} title="Next question / phase">
+						<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M13 5l7 7-7 7" />
+							<path d="M4 12h16" />
+						</svg>
+						<span class="hidden sm:inline">Next</span>
+					</button>
+					{#if gameState?.status === 'question'}
+						<button class={btnDanger} onclick={finishRoundNow} title="Finish round now">
+							<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M6 6h12v12H6z" />
+							</svg>
+							<span class="hidden sm:inline">Finish</span>
+						</button>
+					{/if}
 				{/if}
 
-				<div class="controls">
-					{#if gameState.status === 'lobby'}
-						<button onclick={startGame}>Start Game</button>
-						<button class="danger" onclick={resetGameToLobby}>Reset game (stay in lobby)</button>
-					{:else if gameState.status === 'review' || gameState.status === 'question'}
-						<button onclick={nextQuestion}>Next Question / Phase</button>
-						{#if gameState.status === 'question'}
-							<button class="danger" onclick={finishRoundNow}>Finish round now</button>
-						{/if}
-						<button class="danger" onclick={resetGameToLobby}>Reset game (back to lobby)</button>
-					{/if}
-					<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-						<button onclick={removeOfflinePlayers}>Remove offline players</button>
-						<button class="danger" onclick={removeAllPlayers}>Remove ALL players</button>
-					</div>
-				</div>
-			</section>
+				<button class={btnDanger} onclick={resetGameToLobby} title="Reset game to lobby">
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M3 12a9 9 0 1 0 3-6.7" />
+						<path d="M3 4v5h5" />
+					</svg>
+					<span class="hidden sm:inline">Reset</span>
+				</button>
 
-			<section class="questions">
-				<h3>Questions ({questions.length || gameState.totalQuestions || 0})</h3>
-				{#if questions.length}
-					<ol>
-						{#each questions as q (q.index)}
-							<li class:current={q.index === gameState.questionIndex}>
-								<button onclick={() => jumpToQuestion(q.index)}>
-									<span class="inum">#{q.index + 1}</span>
-									{#if q.questionIndex !== null}<span class="qnum"
-											>Q{q.questionIndex! + 1}</span
-										>{/if}
-									{#if q.mediaIndex !== null}<span class="mnum"
-											>M{q.mediaIndex! + 1}</span
-										>{/if}
-									<span class="qtext">{q.question || '—'}</span>
-									<span class="qmeta">{q.type || ''}{q.time ? ` · ${q.time}s` : ''}</span>
-								</button>
+				<button class={btnNeutral} onclick={removeOfflinePlayers} title="Remove offline players">
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M16 11c1.7 0 3 1.3 3 3v5" />
+						<path d="M8 11c-1.7 0-3 1.3-3 3v5" />
+						<path d="M12 12c2.2 0 4-1.8 4-4S14.2 4 12 4 8 5.8 8 8s1.8 4 4 4z" />
+					</svg>
+					<span class="hidden sm:inline">Clean</span>
+				</button>
+
+				<button class={btnNeutral} onclick={vibrateAll} title="Vibrate all phones">
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+						<path d="M20 9c1 1 1 5 0 6" />
+						<path d="M4 9c-1 1-1 5 0 6" />
+					</svg>
+					<span class="hidden sm:inline">Buzz</span>
+				</button>
+
+				<button class={btnDanger} onclick={removeAllPlayers} title="Remove all players">
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M3 6h18" />
+						<path d="M8 6V4h8v2" />
+						<path d="M6 6l1 16h10l1-16" />
+					</svg>
+					<span class="hidden sm:inline">Clear</span>
+				</button>
+			</div>
+		</div>
+
+		<div class="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-slate-300">
+			<div class="min-w-0 truncate" title={currentQuestionLine}>
+				<span class="text-slate-400">Now:</span> {currentQuestionLine}
+			</div>
+			<div class="flex items-center gap-3">
+				<span title="Players">
+					<span class="text-slate-400">Players:</span>
+					{Object.keys(gameState?.players || {}).length}
+				</span>
+				<span title="Answers">
+					<span class="text-slate-400">Answers:</span>
+					{gameState?.answerCount ?? 0}
+				</span>
+			</div>
+		</div>
+	</header>
+
+	<main class="px-4 py-4">
+		{#if gameState}
+			<div class="grid gap-4 lg:grid-cols-2">
+				<section class="rounded-md border border-white/10 bg-white/5">
+					<div class="flex items-center justify-between border-b border-white/10 px-3 py-2">
+						<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-200">
+							Questions
+						</h2>
+						<span class="text-xs text-slate-400"
+							>{questions.length || gameState.totalQuestions || 0}</span
+						>
+					</div>
+
+					{#if questions.length}
+						<ol class="max-h-[70vh] overflow-auto p-2">
+							{#each questions as q (q.index)}
+								<li class="mb-1 last:mb-0">
+									<button
+										onclick={() => jumpToQuestion(q.index)}
+										class={
+											q.index === gameState.questionIndex
+												? 'w-full rounded-md border border-indigo-400/25 bg-indigo-500/10 px-3 py-2 text-left text-xs text-slate-100'
+												: 'w-full rounded-md border border-white/10 bg-black/10 px-3 py-2 text-left text-xs text-slate-100 hover:bg-white/5'
+										}
+									>
+										<div class="flex items-start justify-between gap-3">
+											<div class="min-w-0">
+												<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+													<span class="text-[0.7rem] font-semibold text-slate-300">#{q.index + 1}</span>
+													{#if q.questionIndex !== null}
+														<span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[0.65rem] font-semibold text-slate-200"
+															>Q{q.questionIndex! + 1}</span
+														>
+													{/if}
+													{#if q.mediaIndex !== null}
+														<span class="rounded-md bg-white/5 px-1.5 py-0.5 text-[0.65rem] font-semibold text-slate-200"
+															>M{q.mediaIndex! + 1}</span
+														>
+													{/if}
+												</div>
+												<div class="mt-1 min-w-0 truncate text-xs text-slate-100">
+													{q.question || '—'}
+												</div>
+												<div class="mt-1 text-[0.7rem] text-slate-400">
+													{q.type || ''}{q.time ? ` · ${q.time}s` : ''}
+												</div>
+											</div>
+										</div>
+									</button>
+								</li>
+							{/each}
+						</ol>
+					{:else}
+						<p class="p-3 text-xs text-slate-400">Question list not loaded yet.</p>
+					{/if}
+				</section>
+
+				<section class="rounded-md border border-white/10 bg-white/5">
+					<div class="flex items-center justify-between border-b border-white/10 px-3 py-2">
+						<h2 class="text-xs font-semibold uppercase tracking-wide text-slate-200">Players</h2>
+						<span class="text-xs text-slate-400">{Object.keys(gameState.players || {}).length}</span>
+					</div>
+
+					<ul class="max-h-[70vh] overflow-auto divide-y divide-white/5">
+						{#each Object.values(gameState.players || {}) as any[] as p}
+							<li class="px-3 py-2">
+								<div class="flex items-center justify-between gap-3">
+									<div class="min-w-0">
+										<div class="flex items-center gap-2">
+											<span
+												class={
+													p.connected
+														? 'h-2 w-2 rounded-full bg-emerald-400'
+														: 'h-2 w-2 rounded-full bg-slate-500'
+												}
+												title={p.connected ? 'Online' : 'Offline'}
+											></span>
+											<span class="truncate text-xs font-semibold text-slate-100">{p.name}</span>
+											<span class="text-[0.7rem] text-slate-400">{p.score} pts</span>
+											{#if gameState.status === 'question'}
+												<span
+													class={
+														p.answered
+															? 'h-2 w-2 rounded-full bg-emerald-400'
+															: 'h-2 w-2 rounded-full bg-rose-400'
+													}
+													title={p.answered ? 'Answered' : 'Not answered'}
+												></span>
+											{/if}
+										</div>
+
+										<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] text-slate-400">
+											{#if gameState.status === 'question' && p.lastAnswerTimeLeft !== null && p.lastAnswerTimeLeft !== undefined}
+												<span title="Time left when submitted">{p.lastAnswerTimeLeft}s left</span>
+											{/if}
+											{#if p.lastSeen}
+												<span title="Last seen">{lastSeenLabel(p.lastSeen)}</span>
+											{/if}
+										</div>
+									</div>
+
+									<button
+										onclick={() => removePlayer(p.id)}
+										class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/5 text-slate-200 ring-1 ring-inset ring-white/10 hover:bg-white/10"
+										title="Remove player"
+									>
+										<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+											<path d="M3 6h18" />
+											<path d="M8 6V4h8v2" />
+											<path d="M6 6l1 16h10l1-16" />
+										</svg>
+									</button>
+								</div>
 							</li>
 						{/each}
-					</ol>
-				{:else}
-					<p class="muted">Question list not loaded yet.</p>
-				{/if}
-			</section>
-
-			<section class="players">
-				<h3>Players ({Object.keys(gameState.players || {}).length})</h3>
-				<ul>
-					{#each Object.values(gameState.players || {}) as any[] as p}
-						<li>
-							<span class="pname">{p.name}</span>
-							<span class="pmeta">{p.score}pts</span>
-							<span class="pmeta">{p.connected ? 'online' : 'offline'}</span>
-							<button class="small" onclick={() => removePlayer(p.id)}>Remove</button>
-							{#if gameState.status === 'question'}
-								<span class="pmeta" class:answered={p.answered}>
-									{p.answered ? 'answered' : 'not answered'}
-								</span>
-								{#if p.lastAnswerTimeLeft !== null && p.lastAnswerTimeLeft !== undefined}
-									<span class="pmeta">({p.lastAnswerTimeLeft}s left)</span>
-								{/if}
-							{/if}
-							{#if p.lastSeen}
-								<span class="pmeta">({lastSeenLabel(p.lastSeen)})</span>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</section>
-		</div>
-	{:else}
-		<p>Loading state...</p>
-	{/if}
+					</ul>
+				</section>
+			</div>
+		{:else}
+			<div class="rounded-md border border-white/10 bg-white/5 p-4 text-xs text-slate-300">
+				Loading state…
+			</div>
+		{/if}
+	</main>
 </div>
-
-<style>
-	.admin-panel {
-		width: 100%;
-		height: 100%;
-		padding: 12px;
-		box-sizing: border-box;
-		font-family: Inter, sans-serif;
-		overflow: auto;
-		background: linear-gradient(180deg, #07070a 0%, #0b0b0d 100%);
-		color: #e6eef8;
-	}
-	.status-indicator {
-		color: #ef4444;
-		margin-bottom: 12px;
-		font-weight: 700;
-	}
-	.status-indicator.on {
-		color: #34d399;
-	}
-
-	.dashboard {
-		display: grid;
-		gap: 20px;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-	}
-	.game-state {
-		background: #0f1724;
-		padding: 16px;
-		border-radius: 10px;
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		color: #e6eef8;
-	}
-	.controls button {
-		padding: 10px 16px;
-		font-size: 1rem;
-		cursor: pointer;
-		background: linear-gradient(180deg, #4f46e5, #4338ca);
-		color: white;
-		border: none;
-		border-radius: 8px;
-	}
-	.controls button:hover {
-		filter: brightness(1.05);
-	}
-	.controls .danger {
-		background: linear-gradient(180deg, #dc2626, #b91c1c);
-	}
-	.controls .danger:hover {
-		filter: brightness(1.05);
-	}
-
-	.questions {
-		background: #0f1724;
-		padding: 16px;
-		border-radius: 10px;
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		color: #e6eef8;
-	}
-	.questions ol {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: grid;
-		gap: 8px;
-		max-height: 60vh;
-		overflow: auto;
-	}
-	.questions li button {
-		width: 100%;
-		text-align: left;
-		padding: 10px 12px;
-		border-radius: 8px;
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		background: rgba(255, 255, 255, 0.02);
-		color: #e6eef8;
-		cursor: pointer;
-	}
-	.questions li.current button {
-		border-color: #7c3aed;
-		box-shadow: 0 6px 18px rgba(124, 58, 237, 0.12);
-	}
-
-	button.small {
-		margin-left: 8px;
-		background: transparent;
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		color: #e6eef8;
-		padding: 4px 8px;
-		border-radius: 6px;
-		cursor: pointer;
-	}
-	.qnum,.mnum {
-		font-weight: 700;
-		margin-right: 8px;
-	}
-	.qtext {
-		display: inline;
-	}
-	.qmeta {
-		display: block;
-		color: #9fb0c8;
-		font-size: 0.9rem;
-		margin-top: 4px;
-	}
-	.muted {
-		color: #9fb0c8;
-	}
-
-	.badge {
-		background: rgba(255, 255, 255, 0.04);
-		padding: 4px 8px;
-		border-radius: 6px;
-		font-size: 0.85em;
-		text-transform: uppercase;
-		color: #dbeafe;
-	}
-
-	.players ul {
-		list-style: none;
-		padding: 0;
-	}
-	.players li {
-		padding: 10px 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-	}
-	.pname {
-		font-weight: 700;
-		color: #f8fafc;
-	}
-	.pmeta {
-		margin-left: 8px;
-		color: #9fb0c8;
-	}
-	.answered {
-		color: #0f766e;
-		font-weight: 700;
-	}
-</style>

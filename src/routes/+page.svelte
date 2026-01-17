@@ -4,6 +4,9 @@
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
 	import type { BroadcastState, QuizQuestion } from '$lib/quiz/types';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
+	import { HAPTICS, vibrate, type VibrationPattern } from '$lib/config/haptics.svelte';
+	import { createAudioPlayer } from '$lib/utils/audio.svelte';
+	import { createScreenWakeLock } from '$lib/utils/wakeLock.svelte';
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
@@ -13,9 +16,69 @@
 
 	let joined = $state(false);
 	let username = $state('');
+	let hasEverJoined = $state(false);
+	let lastAutoRejoinAt = 0;
 
 	let pingInterval: ReturnType<typeof setInterval> | null = null;
 
+	// Haptics (phone vibration) — configurable via src/lib/config/haptics.svelte.ts
+	let prevStatus: string | null = null;
+	let prevQuestionId: string | null = null;
+	let lastVibrationAt = 0;
+
+	// Keep the screen awake on phones/tablets (best-effort, browser support varies).
+	const wakeLock = createScreenWakeLock();
+
+	// Optional per-question intro sound (played on players' phones when the question appears).
+	const introSoundPlayer = createAudioPlayer();
+	let lastIntroSoundKey: string | null = null;
+	let pendingIntroSound: { src: string; key: string } | null = null;
+	let audioUnlocked = $state(false);
+
+	function markAudioUnlocked() {
+		if (audioUnlocked) return;
+		audioUnlocked = true;
+		void tryPlayPendingIntroSound();
+		void wakeLock.request();
+	}
+
+	async function tryPlayPendingIntroSound() {
+		if (!pendingIntroSound) return;
+		const { src, key } = pendingIntroSound;
+		const ok = await introSoundPlayer.play(src);
+		if (ok) {
+			pendingIntroSound = null;
+			lastIntroSoundKey = key;
+		}
+	}
+
+	function requestIntroSoundPlay(src: string, key: string) {
+		if (!src.trim()) return;
+		if (lastIntroSoundKey === key) return;
+
+		void introSoundPlayer.play(src).then((ok) => {
+			if (ok) {
+				pendingIntroSound = null;
+				lastIntroSoundKey = key;
+				return;
+			}
+
+			// Autoplay blocked (common after refresh) — remember and retry on next interaction.
+			pendingIntroSound = { src, key };
+		});
+	}
+
+	function handleInteraction() {
+		markAudioUnlocked();
+		// Standard buzz (200ms)
+		vibrate(200);
+	}
+
+	function handleDoublePulse() {
+		markAudioUnlocked();
+		// Vibrate 100ms, wait 50ms, vibrate 100ms
+		vibrate([100, 50, 100]);
+	}
 	// Fullscreen (best-effort): supported on most Android/desktop browsers.
 	let canFullscreen = $state(false);
 	let isFullscreen = $state(false);
@@ -28,6 +91,14 @@
 
 	// if question is media, we enter "contemplate" mode (no UI)
 	let contemplateMode = $derived(gameState?.question?.type === 'media');
+
+	const hapticsAvailable = $derived.by(() => {
+		return typeof navigator !== 'undefined' && typeof (navigator as any).vibrate === 'function';
+	});
+	const hapticsStatusLabel = $derived.by(() => {
+		if (!hapticsAvailable) return '';
+		return HAPTICS.enabled ? 'Vibration on' : 'Vibration off';
+	});
 
 	const myScore = $derived(
 		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.score) ?? 0
@@ -131,6 +202,7 @@
 		if (!username.trim()) return;
 		if (!playerId) playerId = getOrCreatePlayerId();
 		socket.send(JSON.stringify({ type: 'join', playerId, name: username.trim() }));
+		hasEverJoined = true;
 	}
 
 	function startPings() {
@@ -196,8 +268,36 @@
 				const prevQid = gameState?.question?.id;
 				gameState = msg.data as BroadcastState;
 
-				// If we are present in gameState.players, treat as joined.
-				if (playerId && gameState?.players?.[playerId]) joined = true;
+				// Consider us joined only if the server state actually contains our playerId.
+				const presentNow = Boolean(playerId && gameState?.players?.[playerId]);
+				const becamePresent = presentNow && !joined;
+				joined = presentNow;
+				if (presentNow) hasEverJoined = true;
+
+				// If we just (re)joined while a question is already active, play the intro sound for
+				// this question as well (useful after kicks / reconnects).
+				if (becamePresent) {
+					const status = String((msg.data as any)?.status ?? '');
+					const qid = typeof (msg.data as any)?.question?.id === 'string' ? (msg.data as any).question.id : '';
+					const introSound =
+						typeof (msg.data as any)?.question?.introSound === 'string'
+							? String((msg.data as any).question.introSound)
+							: '';
+					const qIndex = Number((msg.data as any)?.questionIndex ?? -1);
+					if (status === 'question' && introSound.trim() && qid) {
+						requestIntroSoundPlay(introSound, `question:${qIndex}:${qid}`);
+					}
+				}
+
+				// If the admin removed us while we stayed connected, automatically re-join
+				// using the stored name (so the user doesn't have to retype it).
+				if (!presentNow && hasEverJoined && connected && socket && username.trim()) {
+					const now = Date.now();
+					if (now - lastAutoRejoinAt > 1_500) {
+						lastAutoRejoinAt = now;
+						ensureJoined();
+					}
+				}
 
 				// Reset input on new question
 				if (gameState?.question?.id && prevQid && gameState.question.id !== prevQid) {
@@ -215,6 +315,12 @@
 				hasSubmitted = true;
 				if (typeof msg.timeLeft === 'number') lastSubmittedTimeLeft = msg.timeLeft;
 				if (typeof msg.submittedAt === 'number') lastSubmittedAt = msg.submittedAt;
+			}
+
+			if (msg.type === 'vibrate') {
+				// Broadcast from the admin to buzz all players at once.
+				console.log('Vibrate command received from server');
+				vibrate(HAPTICS.adminBroadcast);
 			}
 		};
 
@@ -234,6 +340,58 @@
 			s.close();
 			socket = null;
 		};
+	});
+
+	// Screen Wake Lock: start/stop automatically while this page is mounted.
+	$effect(() => {
+		const stop = wakeLock.startAuto();
+		return () => stop();
+	});
+
+	// If the user is joined + connected, try to keep the screen awake.
+	$effect(() => {
+		if (!joined || !connected) return;
+		void wakeLock.request();
+	});
+
+	// Vibrate on question start/end (player view)
+	$effect(() => {
+		const status = String(gameState?.status ?? '');
+		const qid = typeof gameState?.question?.id === 'string' ? gameState.question.id : null;
+		const introSound = typeof q?.introSound === 'string' ? q.introSound : '';
+		const qIndex = Number((gameState as any)?.questionIndex ?? -1);
+		const questionVibration = (q as any)?.vibration as VibrationPattern | undefined;
+		const questionVibrationEnd = (q as any)?.vibrationEnd as VibrationPattern | undefined;
+
+		// Question start: entering question OR switching to a new question id while in question.
+		if (
+			status === 'question' &&
+			qid &&
+			(prevStatus !== 'question' || (prevQuestionId && qid !== prevQuestionId))
+		) {
+			// Question start vibration is opt-in per-question.
+			if (questionVibration !== undefined) {
+				vibrate(questionVibration);
+			}
+
+			// Optional audio cue for the question.
+			if (introSound.trim() && joined) {
+				requestIntroSoundPlay(introSound, `question:${qIndex}:${qid}`);
+			}
+		}
+
+		// Question end: leaving question.
+		if (prevStatus === 'question' && status && status !== 'question') {
+			// Question end vibration is also opt-in per-question.
+			if (questionVibrationEnd !== undefined) {
+				vibrate(questionVibrationEnd);
+			}
+			// Reset so restarting the game can play the same question's intro again.
+			lastIntroSoundKey = null;
+		}
+
+		prevStatus = status || null;
+		prevQuestionId = qid;
 	});
 
 	function joinGame() {
@@ -341,12 +499,24 @@
 	class:bg-emerald-950={reviewFeedback === 'perfect'}
 	class:bg-amber-950={reviewFeedback === 'partial'}
 	class:bg-rose-950={reviewFeedback === 'wrong'}
+	onpointerdown={markAudioUnlocked}
 >
 	<div class="mx-auto flex h-full max-w-md flex-col px-4 py-4">
 		<header class="mb-4 flex items-center justify-between">
 			<div>
 				<div class="text-xs text-slate-400">Quizz</div>
 				<h1 class="text-lg font-semibold">Player</h1>
+				{#if hapticsAvailable}
+					<div class="mt-1 inline-flex items-center gap-2 text-[0.7rem] text-slate-400" ontouchstart={handleInteraction}>
+						<span
+							class={HAPTICS.enabled
+								? 'h-2 w-2 rounded-full bg-emerald-400'
+								: 'h-2 w-2 rounded-full bg-slate-500'}
+							title={hapticsStatusLabel}
+						></span>
+						<span>{hapticsStatusLabel}</span>
+					</div>
+				{/if}
 			</div>
 			<div class="flex items-center gap-3">
 				{#if canFullscreen}

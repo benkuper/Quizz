@@ -28,6 +28,7 @@
             "id": "paris",
             "type": "qcm",
             "time": 60,
+            "introSound": "/media/engine.wav",
             "question": "What is the capital of France?",
             "options": [
                 "Berlin",
@@ -67,6 +68,8 @@
         },
         {
             "id": "ocean",
+            "introSound": "/media/engine.wav",
+            "vibration": [50,500,50,100,50,100,1000],
             "type": "qcm",
             "question": "What are the 2 largest oceans on Earth?",
             "options": [

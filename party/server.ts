@@ -53,6 +53,7 @@ export default class QuizServer implements Party.Server {
     private connIdToPlayerId: Record<string, string> = {};
 
     private presenceInterval: ReturnType<typeof setInterval> | null = null;
+	private lastAdminVibrateAt = 0;
 
     state: GameState = {
         status: 'lobby',
@@ -165,6 +166,14 @@ export default class QuizServer implements Party.Server {
 		if (event.type === 'admin_reset') {
 			this.resetGameToLobby();
 		}
+
+        if (event.type === 'admin_vibrate') {
+            const now = Date.now();
+            // Basic throttling to prevent accidental spam.
+            if (now - this.lastAdminVibrateAt < 800) return;
+            this.lastAdminVibrateAt = now;
+            this.room.broadcast(JSON.stringify({ type: 'vibrate' }));
+        }
 
         if (event.type === 'admin_get_questions') {
             sender.send(

@@ -1,36 +1,52 @@
 <script lang="ts">
-	import PartySocket from 'partysocket';
+	import type PartySocket from 'partysocket';
 	import ProjectorQuestionRenderer from '$lib/components/quiz/projector/ProjectorQuestionRenderer.svelte';
+	import { toDataURL } from 'qrcode';
+	import { createQuizSocket } from '$lib/partykit/client.svelte';
 
 	let gameState: any = $state(null);
 	let socket: PartySocket | null = $state(null);
 	let lastAutoAdvanceQuestionId: string | null = $state(null);
-	const PARTYKIT_PORT = 1999;
-	function getPartykitHost() {
-		const override = (import.meta as any).env?.VITE_PARTYKIT_HOST;
-		if (typeof override === 'string' && override.trim()) return override.trim();
-		if (typeof location !== 'undefined' && location.hostname) return `${location.hostname}:${PARTYKIT_PORT}`;
-		return `localhost:${PARTYKIT_PORT}`;
-	}
+	let joinUrl = typeof window !== 'undefined' ? `${location.origin}` : null
+	let joinQrDataUrl: string | null = $state(null);
 
 	const sortedPlayers = $derived.by(() =>
 		gameState?.players
 			? [...(Object.values(gameState.players) as any[])].sort(
-				(a: any, b: any) => (b?.score ?? 0) - (a?.score ?? 0)
-			)
+					(a: any, b: any) => (b?.score ?? 0) - (a?.score ?? 0)
+				)
 			: []
 	);
 
-	const playersList = $derived.by(() => (gameState?.players ? (Object.values(gameState.players) as any[]) : []));
+	const playersList = $derived.by(() =>
+		gameState?.players ? (Object.values(gameState.players) as any[]) : []
+	);
 	const correctPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === true));
 	const wrongPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === false));
 
+
 	$effect(() => {
-		const s = new PartySocket({
-			host: getPartykitHost(),
-			room: 'quiz-room-1',
-			query: { role: 'projector' }
+		if (!joinUrl) return;
+		let cancelled = false;
+
+		(async () => {
+			const dataUrl = await toDataURL(joinUrl, {
+				margin: 1,
+				width: 320,
+				errorCorrectionLevel: 'M'
+			});
+			if (!cancelled) joinQrDataUrl = dataUrl;
+		})().catch(() => {
+			if (!cancelled) joinQrDataUrl = null;
 		});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	$effect(() => {
+		const s = createQuizSocket({ role: 'projector' });
 		socket = s;
 
 		s.onmessage = (evt) => {
@@ -48,7 +64,8 @@
 		const qid = String(gameState?.question?.id ?? '');
 		if (!qid) return;
 		// Reset per question so we can auto-advance once.
-		if (lastAutoAdvanceQuestionId && lastAutoAdvanceQuestionId !== qid) lastAutoAdvanceQuestionId = null;
+		if (lastAutoAdvanceQuestionId && lastAutoAdvanceQuestionId !== qid)
+			lastAutoAdvanceQuestionId = null;
 	});
 
 	function isMediaQuestion() {
@@ -75,7 +92,16 @@
 			{:else if gameState.status === 'lobby'}
 				<div class="lobby">
 					<h1>Join the Quiz!</h1>
-					<p class="url">Go to <strong>quiz-app.com</strong></p>
+					<p class="url">Go to <strong>{joinUrl}</strong></p>
+
+					<div class="join-qr-container">
+						{#if joinQrDataUrl}
+							<img class="join-qr" src={joinQrDataUrl} alt="QR code to join the quiz" />
+						{:else}
+							<div class="join-qr placeholder">Generating QR…</div>
+						{/if}
+					</div>
+
 					<p class="count">Players: {Object.keys(gameState.players || {}).length}</p>
 				</div>
 			{:else if gameState.status === 'question'}
@@ -167,7 +193,9 @@
 							<div class="meta">
 								<span class="tag">{p.connected ? 'online' : 'offline'}</span>
 								{#if gameState.status === 'question'}
-									<span class="tag" class:answered={p.answered}>{p.answered ? 'answered' : '…'}</span>
+									<span class="tag" class:answered={p.answered}
+										>{p.answered ? 'answered' : '…'}</span
+									>
 								{/if}
 								{#if gameState.status === 'review' && p.lastCorrect !== null}
 									<span class="tag">{p.lastCorrect ? 'correct' : 'wrong'}</span>
@@ -187,6 +215,33 @@
 		background: #111;
 		color: white;
 		font-family: 'Inter', sans-serif;
+	}
+
+	.join-qr-container {
+		margin-bottom: 2rem;
+		text-align: center;
+		display: flex;
+		justify-content: center;
+	}
+
+	.join-qr {
+		width: 14rem;
+		height: 14rem;
+		background: white;
+		border-radius: 0.75rem;
+		padding: 0.75rem;
+		box-sizing: border-box;
+		image-rendering: pixelated;
+	}
+	.join-qr.placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #cbd5e1;
+		background: #0b0b0b;
+		border: 1px solid #222;
+		font-weight: 700;
+		letter-spacing: 0.02em;
 	}
 	.projector {
 		height: 100%;
@@ -238,19 +293,37 @@
 		border-radius: 14px;
 		padding: 10px 12px;
 	}
-	.plist li.online { border-color: #1f2937; }
-	.plist li.offline { opacity: 0.55; }
-	.plist li.ok { border-color: #10b981; }
-	.plist li.ko { border-color: #ef4444; }
+	.plist li.online {
+		border-color: #1f2937;
+	}
+	.plist li.offline {
+		opacity: 0.55;
+	}
+	.plist li.ok {
+		border-color: #10b981;
+	}
+	.plist li.ko {
+		border-color: #ef4444;
+	}
 	.plist .row {
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
 		gap: 12px;
 	}
-	.plist .pname { font-weight: 800; }
-	.plist .score { color: #cbd5e1; font-weight: 800; }
-	.plist .meta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; }
+	.plist .pname {
+		font-weight: 800;
+	}
+	.plist .score {
+		color: #cbd5e1;
+		font-weight: 800;
+	}
+	.plist .meta {
+		margin-top: 6px;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 	.tag {
 		font-size: 0.85rem;
 		padding: 3px 10px;
@@ -258,14 +331,26 @@
 		background: #1f2937;
 		color: #cbd5e1;
 	}
-	.tag.answered { background: #4f46e5; color: white; }
-	.muted { color: #666; }
+	.tag.answered {
+		background: #4f46e5;
+		color: white;
+	}
+	.muted {
+		color: #666;
+	}
 
 	.loading {
 		font-size: 2rem;
 		color: #666;
 	}
 
+
+	.lobby {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	
 	.lobby h1 {
 		font-size: 4rem;
 		margin-bottom: 0.5em;
@@ -330,8 +415,18 @@
 		width: 100%;
 		max-width: 100%;
 	}
-	.results h4 { margin: 0 0 10px; color: #cbd5e1; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.06em; }
-	.pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
+	.results h4 {
+		margin: 0 0 10px;
+		color: #cbd5e1;
+		font-size: 1.2rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	.pill-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
 	.res-pill {
 		padding: 10px 14px;
 		border-radius: 999px;
@@ -340,9 +435,15 @@
 		font-size: 1.2rem;
 		font-weight: 800;
 	}
-	.res-pill.ok { border-color: #10b981; }
-	.res-pill.ko { border-color: #ef4444; }
-	.res-pill.neutral { opacity: 0.6; }
+	.res-pill.ok {
+		border-color: #10b981;
+	}
+	.res-pill.ko {
+		border-color: #ef4444;
+	}
+	.res-pill.neutral {
+		opacity: 0.6;
+	}
 
 	.leaderboard ol {
 		font-size: 2.5rem;

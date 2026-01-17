@@ -1,7 +1,9 @@
 <script lang="ts">
-	import PartySocket from 'partysocket';
+	import type PartySocket from 'partysocket';
+	import { createQuizSocket } from '$lib/partykit/client.svelte';
 
-	let socket: PartySocket | null = $state(null);
+	// socket must be non-reactive to avoid re-triggering $effect when assigned
+	let socket: PartySocket | null = null;
 	let gameState = $state(null as any);
 	let questions: Array<{
 		index: number;
@@ -14,21 +16,8 @@
 	}> = $state([]);
 	let connected = $state(false);
 
-	const PARTYKIT_PORT = 1999;
-	function getPartykitHost() {
-		const override = (import.meta as any).env?.VITE_PARTYKIT_HOST;
-		if (typeof override === 'string' && override.trim()) return override.trim();
-		if (typeof location !== 'undefined' && location.hostname)
-			return `${location.hostname}:${PARTYKIT_PORT}`;
-		return `localhost:${PARTYKIT_PORT}`;
-	}
-
 	$effect(() => {
-		const s = new PartySocket({
-			host: getPartykitHost(),
-			room: 'quiz-room-1', // hardcoded room for now
-			query: { role: 'admin' }
-		});
+		const s = createQuizSocket({ role: 'admin' });
 		socket = s;
 
 		s.onopen = () => {
@@ -62,6 +51,11 @@
 
 	function finishRoundNow() {
 		socket?.send(JSON.stringify({ type: 'admin_finish_round' }));
+	}
+
+	function resetGameToLobby() {
+		if (!confirm('Reset the game and go back to the lobby? Scores will be reset.')) return;
+		socket?.send(JSON.stringify({ type: 'admin_reset' }));
 	}
 
 	function removeOfflinePlayers() {
@@ -116,11 +110,13 @@
 				<div class="controls">
 					{#if gameState.status === 'lobby'}
 						<button onclick={startGame}>Start Game</button>
+						<button class="danger" onclick={resetGameToLobby}>Reset game (stay in lobby)</button>
 					{:else if gameState.status === 'review' || gameState.status === 'question'}
 						<button onclick={nextQuestion}>Next Question / Phase</button>
 						{#if gameState.status === 'question'}
 							<button class="danger" onclick={finishRoundNow}>Finish round now</button>
 						{/if}
+						<button class="danger" onclick={resetGameToLobby}>Reset game (back to lobby)</button>
 					{/if}
 					<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
 						<button onclick={removeOfflinePlayers}>Remove offline players</button>

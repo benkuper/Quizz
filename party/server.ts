@@ -162,6 +162,10 @@ export default class QuizServer implements Party.Server {
             this.startGame();
         }
 
+		if (event.type === 'admin_reset') {
+			this.resetGameToLobby();
+		}
+
         if (event.type === 'admin_get_questions') {
             sender.send(
                 JSON.stringify({
@@ -287,6 +291,27 @@ export default class QuizServer implements Party.Server {
 
             this.nextQuestion();
         }
+    }
+
+    private resetGameToLobby() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+
+        // Keep players connected, but reset game progress and scores.
+        for (const p of Object.values(this.state.players)) {
+            p.score = 0;
+        }
+
+        this.state.status = 'lobby';
+        this.state.questionIndex = -1;
+        this.state.timer = 0;
+        this.state.currentAnswers = {};
+        this.state.lastRoundResults = {};
+        this.state.lastRoundSummary = undefined;
+
+        this.broadcastState();
     }
 
     private jumpToQuestion(index: number) {

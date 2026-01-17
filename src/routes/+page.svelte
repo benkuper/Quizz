@@ -1,18 +1,9 @@
 <script lang="ts">
-	import PartySocket from 'partysocket';
+	import type PartySocket from 'partysocket';
 	import { fade, fly } from 'svelte/transition';
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
 	import type { BroadcastState, QuizQuestion } from '$lib/quiz/types';
-
-	const ROOM = 'quiz-room-1';
-	const PARTYKIT_PORT = 1999;
-	function getPartykitHost() {
-		const override = (import.meta as any).env?.VITE_PARTYKIT_HOST;
-		if (typeof override === 'string' && override.trim()) return override.trim();
-		if (typeof location !== 'undefined' && location.hostname)
-			return `${location.hostname}:${PARTYKIT_PORT}`;
-		return `localhost:${PARTYKIT_PORT}`;
-	}
+	import { createQuizSocket } from '$lib/partykit/client.svelte';
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
@@ -176,10 +167,7 @@
 			playerId = getOrCreatePlayerId();
 		}
 
-		const s = new PartySocket({
-			host: getPartykitHost(),
-			room: ROOM
-		});
+		const s = createQuizSocket();
 		socket = s;
 
 		s.onopen = () => {
@@ -341,23 +329,9 @@
 			!document.fullscreenElement &&
 			typeof document.documentElement?.requestFullscreen === 'function';
 
-		let removeFsListener: (() => void) | null = null;
-		if (canFullscreen) {
-			// const onFirstTap = async () => {
-			// 	try {
-			// 		await document.documentElement.requestFullscreen({ navigationUI: 'hide' } as any);
-			// 	} catch {
-			// 		// ignore (browser denied / unsupported)
-			// 	}
-			// };
-			// document.addEventListener('pointerdown', onFirstTap, { once: true, passive: true });
-			// removeFsListener = () => document.removeEventListener('pointerdown', onFirstTap);
-		}
-
 		return () => {
 			document.documentElement.classList.remove('kiosk-player');
 			document.body.classList.remove('kiosk-player');
-			removeFsListener?.();
 		};
 	});
 </script>

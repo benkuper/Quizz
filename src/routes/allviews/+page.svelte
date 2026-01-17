@@ -1,26 +1,12 @@
 <script lang="ts">
-	import PartySocket from 'partysocket';
-	import ProjectorQuestionRenderer from '$lib/components/quiz/projector/ProjectorQuestionRenderer.svelte';
-	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
-
-	const PARTYKIT_PORT = 1999;
-	function getPartykitHost() {
-		const override = (import.meta as any).env?.VITE_PARTYKIT_HOST;
-		if (typeof override === 'string' && override.trim()) return override.trim();
-		if (typeof location !== 'undefined' && location.hostname)
-			return `${location.hostname}:${PARTYKIT_PORT}`;
-		return `localhost:${PARTYKIT_PORT}`;
-	}
+	import { createQuizSocket } from '$lib/partykit/client.svelte';
+	import { browser } from '$app/environment';
 
 	// Projector state
 	let projState: any = $state(null);
 
 	$effect(() => {
-		const s = new PartySocket({
-			host: getPartykitHost(),
-			room: 'quiz-room-1',
-			query: { role: 'projector' }
-		});
+		const s = createQuizSocket({ role: 'projector' });
 		s.onmessage = (evt) => {
 			const msg = JSON.parse(evt.data);
 			if (msg.type === 'state') projState = msg.data;
@@ -32,6 +18,22 @@
 	let adminState: any = $state(null);
 	let questions: any[] = $state([]);
 	let adminSocket: any = $state(null);
+
+	let basePath: string = $state('');
+	let baseUrl: string = $state('');
+
+	$effect(() => {
+		if (!browser) return;
+		if (baseUrl) return; // guard to run only once
+
+		const pathname = location.pathname;
+		const m = pathname.match(/^(.*?)(?:\/allviews)(?:\/.*)?$/);
+		basePath = m ? m[1] || '/' : pathname.replace(/\/$/, '') || '/';
+		if (basePath.endsWith('/')) {
+			basePath = basePath.slice(0, -1);
+		}
+		baseUrl = `${location.origin}`;
+	});
 
 	function startGame() {
 		adminSocket?.send(JSON.stringify({ type: 'admin_start' }));
@@ -47,11 +49,7 @@
 	}
 
 	$effect(() => {
-		const s = new PartySocket({
-			host: getPartykitHost(),
-			room: 'quiz-room-1',
-			query: { role: 'admin' }
-		});
+		const s = createQuizSocket({ role: 'admin' });
 		adminSocket = s;
 		s.onopen = () => s.send(JSON.stringify({ type: 'admin_get_questions' }));
 		s.onmessage = (evt) => {
@@ -63,33 +61,43 @@
 	});
 </script>
 
-<main class="allviews">
-	<div class="left">
-		<iframe title="Projector View" class="panel-iframe" src="/projector" width="1920" height="1080"></iframe>
-	</div>
+{#if baseUrl === ''}
+	<p>Loading...</p>
+{:else}
+	<main class="allviews">
+		<div class="left">
+			<iframe
+				title="Projector View"
+				class="panel-iframe"
+				src="{basePath}/projector"
+				width="1920"
+				height="1080"
+			></iframe>
+		</div>
 
-	<div class="right">
-		<div class="top">
-			<iframe title="Admin View" class="panel-iframe" src="/admin"></iframe>
-		</div>
-		<div class="bottom">
-			{#each [1, 2] as i}
-				<div class="phone-frame">
-					<div class="phone-header">Phone {i}</div>
-					<div class="device-wrap">
-						<iframe
-							title="Phone {i}"
-							class="phone-iframe"
-							src="/?playerId=phone-{i}&name=Phone%20{i}"
-							width="1080"
-							height="1920"
-						></iframe>
+		<div class="right">
+			<div class="top">
+				<iframe title="Admin View" class="panel-iframe" src="{basePath}/admin"></iframe>
+			</div>
+			<div class="bottom">
+				{#each [1, 2] as i}
+					<div class="phone-frame">
+						<div class="phone-header">Phone {i}</div>
+						<div class="device-wrap">
+							<iframe
+								title="Phone {i}"
+								class="phone-iframe"
+								src="{basePath}/?playerId=phone-{i}&name=Phone%20{i}"
+								width="1080"
+								height="1920"
+							></iframe>
+						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			</div>
 		</div>
-	</div>
-</main>
+	</main>
+{/if}
 
 <style>
 	:global(body) {
@@ -133,32 +141,33 @@
 		min-height: 0;
 	}
 
-	
-
 	.phone-frame {
 		position: relative;
-		width: 235px;
+		width: 220px;
 		border-radius: 20px;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		padding: 48px 18px 18px; /* leave top space for device bezel */
+		padding-top: 1rem;
+		/* padding: 48px 18px 18px; */
 		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 		box-sizing: border-box;
 		min-height: 0;
 		background-image: url('/phone_placeholder.png');
+		background-color: #000000;
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: contain;
 	}
 	.phone-header {
 		position: absolute;
+		font-size: 0.6em;
 		top: 12px;
 		left: 50%;
 		transform: translateX(-50%);
 		background: rgba(17, 24, 39, 0.95);
 		color: white;
-		padding: 6px 10px;
+		padding: 0.15rem 0.6rem;
 		border-radius: 12px;
 		z-index: 2;
 	}

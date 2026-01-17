@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 .vscode/sftp.json
 static/media/
+
+# Partykit
+.partykit

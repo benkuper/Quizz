@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { QuizQuestionFastFingers } from '$lib/quiz/types';
+	import { getMedia } from '$lib/url.svelte';
 
 	type Props = {
 		question: QuizQuestionFastFingers;
@@ -102,7 +103,7 @@
 				aria-label={left?.alt ?? 'Choice'}
 			>
 				{#if left}
-					<img class="img" src={left.src} alt={left.alt ?? ''} />
+					<img class="img" src={getMedia(left.src)} alt={left.alt ?? ''} />
 				{/if}
 			</button>
 			<button
@@ -112,7 +113,7 @@
 				aria-label={right?.alt ?? 'Choice'}
 			>
 				{#if right}
-					<img class="img" src={right.src} alt={right.alt ?? ''} />
+					<img class="img" src={getMedia(right.src)} alt={right.alt ?? ''} />
 				{/if}
 			</button>
 		</div>

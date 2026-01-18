@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GameStatus, QuizQuestionMedia } from '$lib/quiz/types';
+	import { getMedia } from '$lib/url.svelte';
 
 	type Props = {
 		status: GameStatus;
@@ -9,6 +10,7 @@
 
 	let { question, onFinished }: Props = $props();
 
+	
 	const items = $derived.by(() => {
 		const raw = (question as any)?.media;
 		return Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -55,11 +57,11 @@
 <div class="media-wrap">
 	{#each items as item, i (item?.src ?? i)}
 		{#if item?.kind === 'image'}
-			<img class="media" src={item.src} alt={item.alt ?? ''} />
+			<img class="media" src={getMedia(item?.src)} alt={item.alt ?? ''} />
 		{:else}
 			<video
 				class="media"
-				src={item?.src}
+				src={getMedia(item?.src)}
 				poster={item?.poster}
 				playsinline
 				preload="metadata"
@@ -81,8 +83,8 @@
 		display: grid;
 		gap: 1rem;
 		width: min(70rem, 100%);
-		margin: 1rem auto 0;
 	}
+
 	.media {
 		width: 100%;
 		max-height: 70vh;

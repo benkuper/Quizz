@@ -22,24 +22,60 @@
 	}
 </script>
 
-{#if !question}
-	<div class="loading">Loading question…</div>
-{:else}
-	<h2 class="q-text">{text(question)}</h2>
-
-	{#if type === 'qcm'}
-		<QcmView status={status} question={question as any} />
-	{:else if type === 'sorting'}
-		<SortingView status={status} question={question as any} />
-	{:else if type === 'estimate'}
-		<EstimateView status={status} question={question as any} summary={roundSummary?.estimate} />
-	{:else if type === 'fastFingers'}
-		<FastFingersView status={status} question={question as any} />
-	{:else if type === 'media'}
-		<MediaView status={status} question={question as any} onFinished={onMediaFinished} />
-	{:else if type === 'vrwhack'}
-		<VrWhackView status={status} question={question as any} />
+<div class="question-renderer">
+	{#if !question}
+		<div class="loading">Loading question…</div>
 	{:else}
-		<div class="muted">Unsupported type: {type}</div>
+		{#if type !== 'media'}
+			<h2 class="q-text">{text(question)}</h2>
+		{/if}
+		{#if type === 'qcm'}
+			<QcmView {status} question={question as any} />
+		{:else if type === 'sorting'}
+			<SortingView {status} question={question as any} />
+		{:else if type === 'estimate'}
+			<EstimateView {status} question={question as any} summary={roundSummary?.estimate} />
+		{:else if type === 'fastFingers'}
+			<FastFingersView {status} question={question as any} />
+		{:else if type === 'media'}
+			<MediaView {status} question={question as any} onFinished={onMediaFinished} />
+		{:else if type === 'vrwhack'}
+			<VrWhackView {status} question={question as any} />
+		{:else}
+			<div class="muted">Unsupported type: {type}</div>
+		{/if}
 	{/if}
-{/if}
+</div>
+
+<style>
+	.question-renderer {
+		display: flex;
+		width: 100%;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.loading {
+		text-align: center;
+		padding: 2rem;
+		color: var(--slate-400);
+	}
+
+	.q-text {
+		margin-top: 1rem;
+		text-align: center;
+	}
+
+	:global {
+		.option {
+			font-size: 2.5rem;
+			min-width:4rem;
+			font-size:3rem;
+		}
+
+		.ans-pill {
+			font-size: 2.5rem;
+		}
+	}
+</style>

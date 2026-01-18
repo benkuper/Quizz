@@ -7,6 +7,7 @@
 	import { HAPTICS, vibrate, type VibrationPattern } from '$lib/config/haptics.svelte';
 	import { createAudioPlayer } from '$lib/utils/audio.svelte';
 	import { createScreenWakeLock } from '$lib/utils/wakeLock.svelte';
+	import { getMedia } from '$lib/url.svelte';
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
@@ -45,7 +46,7 @@
 	async function tryPlayPendingIntroSound() {
 		if (!pendingIntroSound) return;
 		const { src, key } = pendingIntroSound;
-		const ok = await introSoundPlayer.play(src);
+		const ok = await introSoundPlayer.play(getMedia(src));
 		if (ok) {
 			pendingIntroSound = null;
 			lastIntroSoundKey = key;
@@ -56,7 +57,7 @@
 		if (!src.trim()) return;
 		if (lastIntroSoundKey === key) return;
 
-		void introSoundPlayer.play(src).then((ok) => {
+		void introSoundPlayer.play(getMedia(src)).then((ok) => {
 			if (ok) {
 				pendingIntroSound = null;
 				lastIntroSoundKey = key;

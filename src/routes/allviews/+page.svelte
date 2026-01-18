@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
-	import { browser } from '$app/environment';
+	import { urlState } from '$lib/url.svelte';
 
 	// Projector state
 	let projState: any = $state(null);
@@ -18,22 +18,6 @@
 	let adminState: any = $state(null);
 	let questions: any[] = $state([]);
 	let adminSocket: any = $state(null);
-
-	let basePath: string = $state('');
-	let baseUrl: string = $state('');
-
-	$effect(() => {
-		if (!browser) return;
-		if (baseUrl) return; // guard to run only once
-
-		const pathname = location.pathname;
-		const m = pathname.match(/^(.*?)(?:\/allviews)(?:\/.*)?$/);
-		basePath = m ? m[1] || '/' : pathname.replace(/\/$/, '') || '/';
-		if (basePath.endsWith('/')) {
-			basePath = basePath.slice(0, -1);
-		}
-		baseUrl = `${location.origin}`;
-	});
 
 	function startGame() {
 		adminSocket?.send(JSON.stringify({ type: 'admin_start' }));
@@ -61,7 +45,7 @@
 	});
 </script>
 
-{#if baseUrl === ''}
+{#if urlState.baseUrl === ''}
 	<p>Loading...</p>
 {:else}
 	<main class="allviews">
@@ -69,7 +53,7 @@
 			<iframe
 				title="Projector View"
 				class="panel-iframe"
-				src="{basePath}/projector"
+				src="{urlState.basePath}/projector"
 				width="1920"
 				height="1080"
 			></iframe>
@@ -77,7 +61,7 @@
 
 		<div class="right">
 			<div class="top">
-				<iframe title="Admin View" class="panel-iframe" src="{basePath}/admin"></iframe>
+				<iframe title="Admin View" class="panel-iframe" src="{urlState.basePath}/admin"></iframe>
 			</div>
 			<div class="bottom">
 				{#each [1, 2] as i}
@@ -87,7 +71,7 @@
 							<iframe
 								title="Phone {i}"
 								class="phone-iframe"
-								src="{basePath}/?playerId=phone-{i}&name=Phone%20{i}"
+								src="{urlState.basePath}/?playerId=phone-{i}&name=Phone%20{i}"
 								width="1080"
 								height="1920"
 							></iframe>

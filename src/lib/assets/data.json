@@ -18,7 +18,7 @@
             "question": "Intro",
             "media": {
                 "kind": "video",
-                "src": "/media/intro.mp4",
+                "src": "intro.mp4",
                 "autoplay": true,
                 "muted": false,
                 "controls": false
@@ -28,7 +28,7 @@
             "id": "paris",
             "type": "qcm",
             "time": 60,
-            "introSound": "/media/engine.wav",
+            "introSound": "engine.wav",
             "question": "What is the capital of France?",
             "options": [
                 "Berlin",
@@ -60,7 +60,7 @@
             "question": "Intermede",
             "media": {
                 "kind": "video",
-                "src": "/media/intro.mp4",
+                "src": "intro.mp4",
                 "autoplay": true,
                 "muted": false,
                 "controls": false
@@ -68,7 +68,7 @@
         },
         {
             "id": "ocean",
-            "introSound": "/media/engine.wav",
+            "introSound": "engine.wav",
             "vibration": [50,500,50,100,50,100,1000],
             "type": "qcm",
             "question": "What are the 2 largest oceans on Earth?",
@@ -138,41 +138,41 @@
                 "steps": [
                     {
                         "good": {
-                            "src": "/fastfingers/cat.svg",
+                            "src": "fastfingers/cat.svg",
                             "alt": "Cat"
                         },
                         "bad": {
-                            "src": "/fastfingers/dog.svg",
+                            "src": "fastfingers/dog.svg",
                             "alt": "Dog"
                         }
                     },
                     {
                         "good": {
-                            "src": "/fastfingers/apple.svg",
+                            "src": "fastfingers/apple.svg",
                             "alt": "Apple"
                         },
                         "bad": {
-                            "src": "/fastfingers/banana.svg",
+                            "src": "fastfingers/banana.svg",
                             "alt": "Banana"
                         }
                     },
                     {
                         "good": {
-                            "src": "/fastfingers/cat.svg",
+                            "src": "fastfingers/cat.svg",
                             "alt": "Cat"
                         },
                         "bad": {
-                            "src": "/fastfingers/banana.svg",
+                            "src": "fastfingers/banana.svg",
                             "alt": "Banana"
                         }
                     },
                     {
                         "good": {
-                            "src": "/fastfingers/apple.svg",
+                            "src": "fastfingers/apple.svg",
                             "alt": "Apple"
                         },
                         "bad": {
-                            "src": "/fastfingers/dog.svg",
+                            "src": "fastfingers/dog.svg",
                             "alt": "Dog"
                         }
                     }
@@ -186,7 +186,7 @@
             "question": "Thanks for playing!",
             "media": {
                 "kind": "video",
-                "src": "/media/intro.mp4",
+                "src": "intro.mp4",
                 "autoplay": true,
                 "muted": false,
                 "controls": false

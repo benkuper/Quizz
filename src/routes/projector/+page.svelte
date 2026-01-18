@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { urlState } from '$lib/url.svelte';
 	import SignContainer from '$lib/components/projector/SignContainer.svelte';
+	import PlayerInfo from '$lib/components/projector/PlayerInfo.svelte';
 
 	let gameState: any = $state(null);
 	let socket: PartySocket | null = $state(null);
@@ -189,25 +190,23 @@
 		/>
 	</div>
 
-	<div class="status-bar">
-		<div class="status-left">
+	<div class="status-bar {gameState?.status === 'lobby' ? 'hidden' : ''}">
+		<!-- <div class="status-left">
 			<span class="status-dot" class:live={!!socket}></span>
-			<span class="status-text">
-				{#if !gameState}
-					Connecting…
-				{:else}
-					Status: {gameState.status}
-				{/if}
-			</span>
+		</div> -->
+		<div class="players">
+			{#each [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] as _}
+				&nbsp;
+				{#each playersList as player}
+					<PlayerInfo {player} gameStatus={gameState?.status} />
+				{/each}
+			{/each}
 		</div>
-		{#if String(gameState?.question?.type ?? '') !== 'media' && gameState?.status === 'question'}
-			<div class="timer" class:urgent={gameState?.timer < 5}>{gameState?.timer}</div>
-		{/if}
-		<div class="status-right">
+		<!-- <div class="status-right">
 			{#if gameState?.players}
 				Players: {Object.keys(gameState.players).length}
 			{/if}
-		</div>
+		</div> -->
 	</div>
 	<img class="erics" src="{urlState.basePath}/projector/erics.png " alt="" aria-hidden="true" />
 	<img class="sign" src="{urlState.basePath}/projector/sign.png" alt="" aria-hidden="true" />
@@ -238,6 +237,7 @@
 		left: 0;
 		transform-origin: top left;
 		transform: scale(var(--scale));
+		overflow:hidden;
 	}
 
 	img.full {
@@ -274,7 +274,7 @@
 			opacity: 0;
 		}
 		25% {
-			opacity: .1;
+			opacity: 0.1;
 		}
 		50% {
 			opacity: 0.2;
@@ -295,7 +295,7 @@
 			opacity: 0.4;
 		}
 		95% {
-			opacity: .1;
+			opacity: 0.1;
 		}
 		100% {
 			opacity: 0;
@@ -379,19 +379,30 @@
 
 	.status-bar {
 		position: absolute;
-		left: 6%;
-		right: 6%;
-		bottom: 4%;
-		height: 4rem;
+		bottom: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1.5rem;
 		padding: 0.8rem 1.4rem;
-		border-radius: 999px;
 		background: rgba(203, 203, 203, 0.138);
 		backdrop-filter: blur(0.4rem);
 		font-size: 3rem;
+		padding: 0 1.5rem;
+		transition: transform 240ms ease-in-out;
+	}
+
+	.status-bar.hidden {
+		transform: translateY(100%);
+	}
+
+	.status-bar .players {
+		align-items: center;
+		gap: 1rem;
+		flex-grow: 1;
+		justify-content: center;
+		height: 100%;
+		padding: 0.5rem;
 	}
 
 	.status-left {
@@ -399,29 +410,8 @@
 		align-items: center;
 		gap: 0.8rem;
 	}
-	.status-dot {
-		width: 0.8rem;
-		height: 0.8rem;
-		border-radius: 50%;
-		background: #9ca3af;
-		box-shadow: 0 0 0.8rem rgba(156, 163, 175, 0.8);
-	}
-	.status-dot.live {
-		background: #22c55e;
-		box-shadow: 0 0 1rem rgba(34, 197, 94, 0.9);
-	}
+
 	.status-right {
 		font-weight: 700;
-	}
-
-	.timer {
-		font-size: 4rem;
-		font-weight: bold;
-		margin-bottom: 1rem;
-		color: #4f46e5;
-	}
-	.timer.urgent {
-		color: #ef4444;
-		animation: pulse 1s infinite;
 	}
 </style>

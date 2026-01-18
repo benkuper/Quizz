@@ -195,12 +195,12 @@
 			<span class="status-dot" class:live={!!socket}></span>
 		</div> -->
 		<div class="players">
-			{#each [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] as _}
-				&nbsp;
-				{#each playersList as player}
-					<PlayerInfo {player} gameStatus={gameState?.status} />
-				{/each}
+			<!-- {#each [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] as _} -->
+			<!-- &nbsp; -->
+			{#each playersList as player}
+				<PlayerInfo {player} gameStatus={gameState?.status} />
 			{/each}
+			<!-- {/each} -->
 		</div>
 		<!-- <div class="status-right">
 			{#if gameState?.players}
@@ -237,7 +237,7 @@
 		left: 0;
 		transform-origin: top left;
 		transform: scale(var(--scale));
-		overflow:hidden;
+		overflow: hidden;
 	}
 
 	img.full {
@@ -380,15 +380,14 @@
 	.status-bar {
 		position: absolute;
 		bottom: 0;
+		width: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1.5rem;
-		padding: 0.8rem 1.4rem;
 		background: rgba(203, 203, 203, 0.138);
 		backdrop-filter: blur(0.4rem);
 		font-size: 3rem;
-		padding: 0 1.5rem;
 		transition: transform 240ms ease-in-out;
 	}
 

@@ -2,47 +2,6 @@
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { urlState } from '$lib/url.svelte';
 
-	// Projector state
-	let projState: any = $state(null);
-
-	$effect(() => {
-		const s = createQuizSocket({ role: 'projector' });
-		s.onmessage = (evt) => {
-			const msg = JSON.parse(evt.data);
-			if (msg.type === 'state') projState = msg.data;
-		};
-		return () => s.close();
-	});
-
-	// Admin socket (controls + questions)
-	let adminState: any = $state(null);
-	let questions: any[] = $state([]);
-	let adminSocket: any = $state(null);
-
-	function startGame() {
-		adminSocket?.send(JSON.stringify({ type: 'admin_start' }));
-	}
-	function nextQuestion() {
-		adminSocket?.send(JSON.stringify({ type: 'admin_next' }));
-	}
-	function finishRoundNow() {
-		adminSocket?.send(JSON.stringify({ type: 'admin_finish_round' }));
-	}
-	function jumpToQuestion(i: number) {
-		adminSocket?.send(JSON.stringify({ type: 'admin_jump', index: i }));
-	}
-
-	$effect(() => {
-		const s = createQuizSocket({ role: 'admin' });
-		adminSocket = s;
-		s.onopen = () => s.send(JSON.stringify({ type: 'admin_get_questions' }));
-		s.onmessage = (evt) => {
-			const msg = JSON.parse(evt.data);
-			if (msg.type === 'state') adminState = msg.data;
-			if (msg.type === 'admin_questions') questions = Array.isArray(msg.data) ? msg.data : [];
-		};
-		return () => s.close();
-	});
 </script>
 
 {#if urlState.baseUrl === ''}
@@ -71,7 +30,7 @@
 							<iframe
 								title="Phone {i}"
 								class="phone-iframe"
-								src="{urlState.basePath}/?playerId=phone-{i}&name=Phone%20{i}"
+								src="{urlState.basePath}/?playerId=phone-{i}&name=Super%20Phone%20{i}"
 								width="1080"
 								height="1920"
 							></iframe>
@@ -181,4 +140,5 @@
 		background: transparent;
 		display: block;
 	}
+	
 </style>

@@ -28,6 +28,10 @@
 	const correctPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === true));
 	const wrongPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === false));
 
+	let sign1Text: string = $state('SNACKS');
+	let sign2Text: string = $state('HOT DOGS');
+	let sign3Text: string = $state('COLD DRINKS');
+
 	let projectorScale = $state(1.0);
 
 	function updateScale() {
@@ -45,7 +49,6 @@
 	});
 
 	$effect(() => {
-		return;
 		let rafId = 0;
 		const start = performance.now();
 
@@ -112,6 +115,44 @@
 			lastAutoAdvanceQuestionId = null;
 	});
 
+	$effect(() => {
+		if (!gameState) return;
+		switch (gameState.status) {
+			case 'lobby':
+				sign1Text = 'SNACKS';
+				sign2Text = 'HOT DOGS';
+				sign3Text = 'COLD DRINKS';
+				break;
+			case 'question':
+				if (gameState.question) {
+					sign1Text = 'TEMPS';
+					sign2Text = `${gameState.timer ?? ''}`;
+					sign3Text = 'RESTANT';
+				}
+				break;
+
+			case 'review':
+				{
+					let best3Players = sortedPlayers.slice(0, 3);
+					sign1Text = best3Players[0] ? `${best3Players[0].name.toUpperCase()}` : '---';
+					sign2Text = best3Players[1] ? `${best3Players[1].name.toUpperCase()}` : '---';
+					sign3Text = best3Players[2] ? `${best3Players[2].name.toUpperCase()}` : '---';
+				}
+				break;
+
+			case 'finished':
+				{
+					let winner = sortedPlayers[0];
+					sign1Text = 'GAGNANT';
+					sign2Text = winner ? `${winner.name.toUpperCase()}` : '---';
+					sign3Text = `SCORE: ${winner ? winner.score : '---'}`;
+				}
+				break;
+			default:
+				break;
+		}
+	});
+
 	function isMediaQuestion() {
 		return String(gameState?.question?.type ?? '') === 'media';
 	}
@@ -172,9 +213,11 @@
 	<img class="sign" src="{urlState.basePath}/projector/sign.png" alt="" aria-hidden="true" />
 	<img class="fleche" src="{urlState.basePath}/projector/fleche.png" alt="" aria-hidden="true" />
 
-	<SignContainer text="SNACKS" variant="yellow" x={51} y={-59.5} size={1.3}></SignContainer>
-	<SignContainer text="HOT Dogs" variant="red" x={51} y={-52} size={1}></SignContainer>
-	<SignContainer text="Cold drinks" variant="blue" x={51} y={-44.8} size={.9}></SignContainer>
+	<SignContainer text={sign1Text} variant="yellow" x={51} y={-58.5} size={1.3} flicker={5}
+	></SignContainer>
+	<SignContainer text={sign2Text} variant="red" x={51} y={-51} size={1} flicker={6}></SignContainer>
+	<SignContainer text={sign3Text} variant="blue" x={51} y={-43.8} size={0.9} flicker={7}
+	></SignContainer>
 	<img
 		class="beam full"
 		src="{urlState.basePath}/projector/beam.png"
@@ -231,7 +274,7 @@
 			opacity: 0;
 		}
 		25% {
-			opacity: 0;
+			opacity: .1;
 		}
 		50% {
 			opacity: 0.2;
@@ -249,10 +292,10 @@
 			opacity: 0.2;
 		}
 		92% {
-			opacity: 0.1;
+			opacity: 0.4;
 		}
 		95% {
-			opacity: 0;
+			opacity: .1;
 		}
 		100% {
 			opacity: 0;
@@ -381,6 +424,4 @@
 		color: #ef4444;
 		animation: pulse 1s infinite;
 	}
-
-	
 </style>

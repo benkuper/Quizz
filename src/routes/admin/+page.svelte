@@ -77,6 +77,13 @@
 		socket?.send(JSON.stringify({ type: 'admin_remove_player', playerId: id }));
 	}
 
+	function clearLocalStorage() {
+		if (!confirm('Clear local storage and reload? This will reset your identity.')) return;
+		localStorage.clear();
+		sessionStorage.clear();
+		location.reload();
+	}
+
 	function jumpToQuestion(index: number) {
 		socket?.send(JSON.stringify({ type: 'admin_jump', index }));
 	}
@@ -202,6 +209,14 @@
 						<path d="M6 6l1 16h10l1-16" />
 					</svg>
 					<span class="hidden sm:inline">Clear</span>
+				</button>
+
+				<button class={btnDanger} onclick={clearLocalStorage} title="Clear Local Storage">
+					<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M3 6h18" />
+						<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+					</svg>
+					<span class="hidden sm:inline">Storage</span>
 				</button>
 			</div>
 		</div>

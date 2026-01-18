@@ -8,9 +8,6 @@
 	font-display: swap;
 }
 
-/* Apply Redrock site-wide (override later rules if needed) */
-html, body {
-}
 
 @layer base {
 	html.kiosk-player,

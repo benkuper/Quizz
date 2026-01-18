@@ -5,6 +5,7 @@
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { onMount } from 'svelte';
 	import { urlState } from '$lib/url.svelte';
+	import SignContainer from '$lib/components/projector/SignContainer.svelte';
 
 	let gameState: any = $state(null);
 	let socket: PartySocket | null = $state(null);
@@ -44,6 +45,7 @@
 	});
 
 	$effect(() => {
+		return;
 		let rafId = 0;
 		const start = performance.now();
 
@@ -126,11 +128,14 @@
 	}
 </script>
 
-<main
-	class="projector"
-	style="--scale:{projectorScale}; --screen-opacity:{screenOpacity}; --beam-opacity:{beamOpacity}"
->
-	<img class="full" src="{urlState.basePath}/projector/drivein.png" alt="" aria-hidden="true" />
+<main class="projector" style="--scale:{projectorScale};">
+	<img
+		class="full"
+		src="{urlState.basePath}/projector/drivein.png"
+		style="--screen-opacity:{screenOpacity};"
+		alt=""
+		aria-hidden="true"
+	/>
 	<div class="frame">
 		<ProjectorScreen
 			{gameState}
@@ -163,7 +168,20 @@
 			{/if}
 		</div>
 	</div>
-	<img class="beam full" src="{urlState.basePath}/projector/beam.png" alt="" aria-hidden="true" />
+	<img class="erics" src="{urlState.basePath}/projector/erics.png " alt="" aria-hidden="true" />
+	<img class="sign" src="{urlState.basePath}/projector/sign.png" alt="" aria-hidden="true" />
+	<img class="fleche" src="{urlState.basePath}/projector/fleche.png" alt="" aria-hidden="true" />
+
+	<SignContainer text="SNACKS" variant="yellow" x={51} y={-59.5} size={1.3}></SignContainer>
+	<SignContainer text="HOT Dogs" variant="red" x={51} y={-52} size={1}></SignContainer>
+	<SignContainer text="Cold drinks" variant="blue" x={51} y={-44.8} size={.9}></SignContainer>
+	<img
+		class="beam full"
+		src="{urlState.basePath}/projector/beam.png"
+		style="--beam-opacity:{beamOpacity};"
+		alt=""
+		aria-hidden="true"
+	/>
 </main>
 
 <style>
@@ -197,6 +215,123 @@
 
 	.beam {
 		opacity: var(--beam-opacity);
+	}
+
+	img.erics {
+		position: absolute;
+		top: 305px;
+		left: 50px;
+		opacity: 0;
+		animation: erics-pulse 6s ease-in-out infinite;
+		will-change: opacity;
+	}
+
+	@keyframes erics-pulse {
+		0% {
+			opacity: 0;
+		}
+		25% {
+			opacity: 0;
+		}
+		50% {
+			opacity: 0.2;
+		}
+		80% {
+			opacity: 0.3;
+		}
+		83% {
+			opacity: 0.2;
+		}
+		86% {
+			opacity: 0.3;
+		}
+		89% {
+			opacity: 0.2;
+		}
+		92% {
+			opacity: 0.1;
+		}
+		95% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		img.erics {
+			opacity: 1;
+		}
+	}
+
+	img.sign {
+		position: absolute;
+		top: 457px;
+		left: 108px;
+		animation: sign-blink 10s step-end infinite;
+
+		will-change: opacity;
+	}
+
+	@keyframes sign-blink {
+		0%,
+		80%,
+		90% {
+			opacity: 0;
+		}
+		75%,
+		85% {
+			opacity: 0.8;
+		}
+	}
+
+	img.fleche {
+		position: absolute;
+		top: 532px;
+		left: 136px;
+
+		-webkit-mask-image: linear-gradient(
+			90deg,
+			transparent 0%,
+			rgba(0, 0, 0, 1),
+			rgba(0, 0, 0, 1),
+			transparent 100%
+		);
+		mask-image: linear-gradient(
+			90deg,
+			transparent 0%,
+			rgba(0, 0, 0, 0.6),
+			rgba(0, 0, 0, 0.6),
+			transparent 100%
+		);
+		-webkit-mask-size: 20% 100%;
+		mask-size: 20% 100%;
+		-webkit-mask-position: 0% 0%;
+		mask-position: 0% 0%;
+
+		animation: fleche-opacity-wipe 1s linear infinite;
+		will-change: mask-position;
+	}
+
+	@keyframes fleche-opacity-wipe {
+		0% {
+			-webkit-mask-position: 0% 0%;
+			mask-position: 0% 0%;
+		}
+		100% {
+			-webkit-mask-position: 100% 0%;
+			mask-position: 25% 0%;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		img.fleche {
+			animation: none;
+			-webkit-mask-image: none;
+			mask-image: none;
+			opacity: 1;
+		}
 	}
 
 	.status-bar {
@@ -246,4 +381,6 @@
 		color: #ef4444;
 		animation: pulse 1s infinite;
 	}
+
+	
 </style>

@@ -15,6 +15,7 @@
         {
             "id": "intro",
             "type": "media",
+            "noreading": true,
             "question": "Intro",
             "media": {
                 "kind": "video",

@@ -47,7 +47,7 @@
 
 			<p class="count">Players: {Object.keys(gameState.players || {}).length}</p>
 		</div>
-	{:else if gameState.status === 'question' || gameState.status === 'review'}
+	{:else if gameState.status === 'reading' || gameState.status === 'question' || gameState.status === 'review'}
 		<div class="{gameState.status}-view">
 			<ProjectorQuestionRenderer
 				status={gameState.status}
@@ -159,7 +159,6 @@
 		margin-bottom: 2rem;
 	}
 
-	
 	:global(.options) {
 		display: grid;
 		grid-template-columns: 1fr 1fr;

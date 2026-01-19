@@ -1,4 +1,4 @@
-export type GameStatus = 'lobby' | 'question' | 'review' | 'leaderboard' | 'finished';
+export type GameStatus = 'lobby' | 'reading' | 'question' | 'review' | 'leaderboard' | 'finished';
 
 export type QuizQuestionBase = {
 	id: string;
@@ -14,6 +14,7 @@ export type QuizQuestionBase = {
 	// Optional vibration when leaving the question (question -> review).
 	vibrationEnd?: import('$lib/config/haptics.svelte').VibrationPattern;
 	time?: number;
+	noreading?: boolean;
 };
 
 export type QuizQuestionQcm = QuizQuestionBase & {

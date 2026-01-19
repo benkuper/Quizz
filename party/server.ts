@@ -16,7 +16,7 @@ type Player = {
     lastSeen: number; // epoch ms
 };
 
-type GameStatus = 'lobby' | 'question' | 'review' | 'leaderboard' | 'finished';
+type GameStatus = 'lobby' | 'reading' | 'question' | 'review' | 'leaderboard' | 'finished';
 
 type GameState = {
     status: GameStatus;
@@ -53,7 +53,7 @@ export default class QuizServer implements Party.Server {
     private connIdToPlayerId: Record<string, string> = {};
 
     private presenceInterval: ReturnType<typeof setInterval> | null = null;
-	private lastAdminVibrateAt = 0;
+    private lastAdminVibrateAt = 0;
 
     state: GameState = {
         status: 'lobby',
@@ -163,9 +163,9 @@ export default class QuizServer implements Party.Server {
             this.startGame();
         }
 
-		if (event.type === 'admin_reset') {
-			this.resetGameToLobby();
-		}
+        if (event.type === 'admin_reset') {
+            this.resetGameToLobby();
+        }
 
         if (event.type === 'admin_vibrate') {
             const now = Date.now();
@@ -185,7 +185,7 @@ export default class QuizServer implements Party.Server {
                         mediaIndex: this.isMediaQuestion(q) ? QUESTIONS.slice(0, index).filter((qq: any) => this.isMediaQuestion(qq)).length : null,
                         id: q?.id,
                         question: q?.question,
-                        type: q?.type, 
+                        type: q?.type,
                         time: q?.time
                     }))
                 })
@@ -209,6 +209,11 @@ export default class QuizServer implements Party.Server {
         }
 
         if (event.type === 'admin_next') {
+            if (this.state.status === 'reading') {
+                this.launchQuestion();
+                return;
+            }
+
             // If currently answering, end the round. If in review, advance.
             if (this.state.status === 'question') {
                 const q = QUESTIONS[this.state.questionIndex];
@@ -326,22 +331,21 @@ export default class QuizServer implements Party.Server {
     private jumpToQuestion(index: number) {
         const clamped = Math.max(0, Math.min(QUESTIONS.length - 1, Math.floor(index)));
         this.state.questionIndex = clamped;
-        this.state.status = 'question';
         this.state.currentAnswers = {};
         this.state.lastRoundResults = {};
 
         const currentQ: any = QUESTIONS[this.state.questionIndex];
-
-        if (this.isMediaQuestion(currentQ)) {
-            if (this.interval) {
-                clearInterval(this.interval);
-                this.interval = null;
-            }
-            this.state.timer = 0;
-        } else {
-            const roundTime = currentQ?.time ?? this.DEFAULT_ROUND_TIME;
-            this.startTimer(roundTime);
+        if (currentQ?.noreading) {
+             this.launchQuestion();
+             return;
         }
+
+        this.state.status = 'reading';
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+        this.state.timer = 0;
 
         this.broadcastState();
     }
@@ -366,23 +370,40 @@ export default class QuizServer implements Party.Server {
         // If we were in review, go to next question
         if (this.state.questionIndex < QUESTIONS.length - 1) {
             this.state.questionIndex++;
-            this.state.status = 'question';
             this.state.currentAnswers = {};
             this.state.lastRoundResults = {};
-            const currentQ = QUESTIONS[this.state.questionIndex];
-
-            if (this.isMediaQuestion(currentQ)) {
-                if (this.interval) {
-                    clearInterval(this.interval);
-                    this.interval = null;
-                }
-                this.state.timer = 0;
-            } else {
-                const roundTime = currentQ?.time ?? this.DEFAULT_ROUND_TIME;
-                this.startTimer(roundTime);
+            
+            const currentQ: any = QUESTIONS[this.state.questionIndex];
+            if (currentQ?.noreading) {
+                 this.launchQuestion();
+                 return;
             }
+
+            this.state.status = 'reading';
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = null;
+            }
+            this.state.timer = 0;
         } else {
             this.state.status = 'finished';
+        }
+        this.broadcastState();
+    }
+
+    launchQuestion() {
+        this.state.status = 'question';
+        const currentQ: any = QUESTIONS[this.state.questionIndex];
+
+        if (this.isMediaQuestion(currentQ)) {
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = null;
+            }
+            this.state.timer = 0;
+        } else {
+            const roundTime = currentQ?.time ?? this.DEFAULT_ROUND_TIME;
+            this.startTimer(roundTime);
         }
         this.broadcastState();
     }
@@ -420,10 +441,10 @@ export default class QuizServer implements Party.Server {
     }
 
     private scoreEstimate(
-        guessRaw: unknown,
-        correctRaw: unknown,
-        estimateCfg: any
-    ): { points: number; correct: boolean; guessValue: number | null; correctValue: number | null; distance: number | null } {
+                    guessRaw: unknown,
+                    correctRaw: unknown,
+                    estimateCfg: any
+                ): { points: number; correct: boolean; guessValue: number | null; correctValue: number | null; distance: number | null } {
         const unit: 'year' | 'number' = estimateCfg?.unit === 'number' ? 'number' : 'year';
 
         const correctNum = Number((Array.isArray(correctRaw) ? correctRaw[0] : correctRaw) ?? NaN);

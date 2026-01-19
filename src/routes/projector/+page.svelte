@@ -124,6 +124,13 @@
 				sign2Text = 'HOT DOGS';
 				sign3Text = 'COLD DRINKS';
 				break;
+			case 'reading':
+				if (gameState.question) {
+					sign1Text = 'QUESTION';
+					sign2Text = `${gameState.actualQuestionIndex ?? ''}`;
+					sign3Text = 'LECTURE';
+				}
+				break;
 			case 'question':
 				if (gameState.question) {
 					sign1Text = 'TEMPS';

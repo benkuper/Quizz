@@ -421,6 +421,7 @@
 	}
 
 	function autoSubmit(payload: unknown) {
+		if (gameState?.status === 'reading') return;
 		if (!q) return;
 		if (qType === 'fastFingers') {
 			submitAnswer(payload);
@@ -434,6 +435,7 @@
 	}
 
 	function canSubmit() {
+		if (gameState?.status === 'reading') return false;
 		if (!q) return false;
 		if (qType === 'media') return false;
 		if (qType === 'estimate') return String(answer ?? '').trim().length > 0;
@@ -582,7 +584,7 @@
 						{Object.keys(gameState.players || {}).length} player(s) connected
 					</div>
 				</section>
-			{:else if gameState.status === 'question'}
+				{:else if gameState.status == "question" || gameState.status === 'reading'}
 				<section class="space-y-4" in:fly={{ y: 14, duration: 200 }}>
 					<div class="rounded-2xl bg-slate-900 p-4">
 						<div class="flex items-center justify-between">
@@ -590,9 +592,13 @@
 								Question {gameState.actualQuestionIndex} / {gameState.totalActualQuestions}
 							</div>
 							{#if qType !== 'media'}
-								<div class="text-sm font-bold" class:text-red-400={gameState.timer < 5}>
-									{gameState.timer}s
-								</div>
+								{#if gameState.status === 'reading'}
+									<div class="text-xs font-bold text-indigo-400 animate-pulse">READING</div>
+								{:else}
+									<div class="text-sm font-bold" class:text-red-400={gameState.timer < 5}>
+										{gameState.timer}s
+									</div>
+								{/if}
 							{/if}
 						</div>
 						<div class="mt-3 text-lg leading-snug font-semibold">{q?.question}</div>

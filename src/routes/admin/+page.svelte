@@ -158,13 +158,21 @@
 						</svg>
 						<span class="hidden sm:inline">Start</span>
 					</button>
-				{:else if gameState?.status === 'review' || gameState?.status === 'question'}
+				{:else if gameState?.status === 'review' || gameState?.status === 'question' || gameState?.status === 'reading'}
 					<button class={btnPrimary} onclick={nextQuestion} title="Next question / phase">
 						<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M13 5l7 7-7 7" />
-							<path d="M4 12h16" />
+							{#if gameState.status === 'reading'}
+								<title>Launch Timer</title>
+								<circle cx="12" cy="12" r="10" />
+								<polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
+							{:else}
+								<path d="M13 5l7 7-7 7" />
+								<path d="M4 12h16" />
+							{/if}
 						</svg>
-						<span class="hidden sm:inline">Next</span>
+						<span class="hidden sm:inline">
+							{gameState.status === 'reading' ? 'Launch' : 'Next'}
+						</span>
 					</button>
 					{#if gameState?.status === 'question'}
 						<button class={btnDanger} onclick={finishRoundNow} title="Finish round now">

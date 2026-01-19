@@ -8,9 +8,21 @@
 		onFinished?: () => void;
 	};
 
-	let { question, onFinished }: Props = $props();
+	let { status, question, onFinished }: Props = $props();
+	let videoElements: (HTMLMediaElement | undefined)[] = $state([]);
 
-	
+	$effect(() => {
+		if (status === 'question') {
+			for (const vid of videoElements) {
+				if (vid) vid.play().catch(() => {});
+			}
+		} else if (status === 'reading') {
+			for (const vid of videoElements) {
+				if (vid) vid.pause();
+			}
+		}
+	});
+
 	const items = $derived.by(() => {
 		const raw = (question as any)?.media;
 		return Array.isArray(raw) ? raw : raw ? [raw] : [];
@@ -59,13 +71,15 @@
 		{#if item?.kind === 'image'}
 			<img class="media" src={getMedia(item?.src)} alt={item.alt ?? ''} />
 		{:else}
+			<!-- svelte-ignore a11y_media_has_caption -->
 			<video
+				bind:this={videoElements[i]}
 				class="media"
 				src={getMedia(item?.src)}
 				poster={item?.poster}
 				playsinline
 				preload="metadata"
-				autoplay={item?.autoplay ?? true}
+				autoplay={status !== 'reading' && (item?.autoplay ?? true)}
 				muted={item?.muted ?? (item?.autoplay ?? true)}
 				loop={item?.loop ?? false}
 				controls={item?.controls ?? false}

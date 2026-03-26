@@ -1,7 +1,7 @@
 {
     "questionTypes": {
         "media": "Media Interlude",
-        "qcm": "Multiple Choice Question",
+        "qcm": "QCM",
         "deblur": "Deblur the Image Question",
         "comparison": "Comparison Question",
         "sorting": "Sorting Question",
@@ -26,33 +26,33 @@
             }
         },
         {
-            "id": "paris",
+            "id": "age_tontons",
             "type": "qcm",
-            "time": 60,
+            "time": 30,
             "introSound": "engine.wav",
-            "question": "What is the capital of France?",
+            "question": "Quel âge avait Eric lors de la sortie des Tontons Flingueurs ?",
             "options": [
-                "Berlin",
-                "Madrid",
-                "Paris",
-                "Rome"
+                "Il n'était pas né",
+                "7 ans",
+                "15 ans",
+                "35 ans, il a même joué dedans"
             ],
             "answers": [
-                "Paris"
+                "7 ans"
             ]
         },
         {
-            "id": "mars",
+            "id": "cadillac",
             "type": "qcm",
-            "question": "Which planet is known as the Red Planet?",
+            "question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
             "options": [
-                "Earth",
-                "Mars",
-                "Jupiter",
-                "Saturn"
+                "Le Redoutable, célèbre sous-marin nucléaire Français",
+                "Une Audi A4 qui n'est pas tombé en panne (exemplaire unique au monde)",
+                "Le trans-sibérien. C'était froid, mais c'était beau.",
+                "La Cadillac rose de ses rêves"
             ],
             "answers": [
-                "Mars"
+                "La Cadillac rose de ses rêves"
             ]
         },
         {
@@ -68,117 +68,230 @@
             }
         },
         {
-            "id": "ocean",
+            "id": "autographe",
             "introSound": "engine.wav",
-            "vibration": [50,500,50,100,50,100,1000],
+            "vibration": [
+                50,
+                500,
+                50,
+                100,
+                50,
+                100,
+                1000
+            ],
             "type": "qcm",
-            "question": "What are the 2 largest oceans on Earth?",
+            "question": "J'ai déjà signé des autographes en tant que...",
             "options": [
-                "Atlantic Ocean",
-                "Indian Ocean",
-                "Arctic Ocean",
-                "Pacific Ocean"
+                "Alain (de loin)",
+                "Robert Redford (mais plutôt Robert que Redford)",
+                "Pierre Richard",
+                "Pierre Niney"
             ],
             "answers": [
-                "Pacific Ocean",
-                "Atlantic Ocean"
+                "Alain (de loin)"
             ]
         },
         {
-            "id":"whackTargets",
-            "type":"vrwhack",
-            "time":3000,
-            "question":"Whack as many targets as you can!"
-        },
-        {
-            "id": "sortNumbers",
+            "id": "evenements",
             "type": "sorting",
-            "question": "Arrange the following numbers in ascending order:",
+            "question": "Classez ces événements dans l'ordre chronologique",
             "options": [
-                "42",
-                "7",
-                "19",
-                "3"
+                "Son mariage avec Fabienne",
+                "Son brevet de pilote",
+                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
+                "Le déménagement à St-Philbert-des-Champs"
             ],
             "answers": [
-                "3",
-                "7",
-                "19",
-                "42"
+                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
+                "Son mariage avec Fabienne",
+                "Son brevet de pilote",
+                "Le déménagement à St-Philbert-des-Champs"
             ]
         },
         {
-            "id": "moonLanding",
-            "type": "estimate",
-            "question": "In which year did humans first land on the Moon?",
-            "estimate": {
-                "unit": "year",
-                "min": 1900,
-                "max": 2026,
-                "step": 1,
-                "scoring": {
-                    "maxPoints": 10,
-                    "decay": "linear",
-                    "zeroAt": 5,
-                    "correctWithin": 0
-                }
-            },
+            "id": "antonio",
+            "type": "qcm",
+            "question": "Une raclette sans fromage c'est comme une bibliothèque sans...",
+            "options": [
+                "Francisco",
+                "Antonio",
+                "Gepetto",
+                "Robert"
+            ],
             "answers": [
-                1969
+                "Antonio"
             ]
         },
         {
-            "id": "catClick",
-            "type": "fastFingers",
+            "id": "db2",
+            "type": "qcm",
+            "time": 25,
+            "question": "Problème Electrique : ca a l'air d'être un problème dans la base de données.. seul Eric peut nous sauver ! Mais quelle est donc cette technologie ?",
+            "options": [
+                "DBZ",
+                "DB2",
+                "R2D2",
+                "H2G2"
+            ],
+            "answers": [
+                "DB2"
+            ]
+        },
+        {
+            "id": "magazine_cover",
+            "type": "qcm",
             "time": 25,
             "question": [
-                "Fast Fingers: click the CAT as fast as you can."
+                "Eric a été célèbre pour sa passion pour..."
             ],
-            "fastFingers": {
-                "shuffle": true,
-                "steps": [
-                    {
-                        "good": {
-                            "src": "fastfingers/cat.svg",
-                            "alt": "Cat"
-                        },
-                        "bad": {
-                            "src": "fastfingers/dog.svg",
-                            "alt": "Dog"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/apple.svg",
-                            "alt": "Apple"
-                        },
-                        "bad": {
-                            "src": "fastfingers/banana.svg",
-                            "alt": "Banana"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/cat.svg",
-                            "alt": "Cat"
-                        },
-                        "bad": {
-                            "src": "fastfingers/banana.svg",
-                            "alt": "Banana"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/apple.svg",
-                            "alt": "Apple"
-                        },
-                        "bad": {
-                            "src": "fastfingers/dog.svg",
-                            "alt": "Dog"
-                        }
-                    }
-                ]
-            }
+            "options": [
+                "Les Corn Flakes",
+                "Les arts martiaux",
+                "Les trucs de geek",
+                "Lui-même"
+            ],
+            "answers": [
+                "Les trucs de geek"
+            ]
+        },
+        {
+            "id": "voler",
+            "type": "qcm",
+            "time": 25,
+            "question": "Eric aimer voler...",
+            "options": [
+                "Il est incapable de résister à piquer de menus objets souvenirs dans les restaurants",
+                "Il a fait du parapente",
+                "Il a piloté des avions",
+                "Il pratique le Wingsuit"
+            ],
+            "answers": [
+                "Il a fait du parapente",
+                "Il a piloté des avions"
+            ]
+        },
+        {
+            "id": "continent",
+            "type": "qcm",
+            "time": 25,
+            "question": "Le ou lesquels de ces continents Eric n'a jamais visité ?",
+            "options": [
+                "Afrique",
+                "Amérique du Nord",
+                "Amérique du Sud",
+                "Australie / Océanie",
+                "Asie",
+                "Antarctique",
+                "Europe"
+            ],
+            "answers": [
+                "Afrique",
+                "Antarctique"
+            ]
+        },
+        {
+            "id": "militaire",
+            "type": "burger-de-la-mort",
+            "time": 25,
+            "question": "Questions militaires",
+            "options": [
+                "Boisson favorite (et surconsommée)",
+                "Couleur de la cravate : marron (caca)",
+                "Nom des camions dans lesquels nous travaillions (plus ou moins)",
+                "Grade du commandant du camp",
+                "Chanson de la troupe ",
+                "Nom officiel des soldats que nous étions",
+                "Nom militaire du facteur"
+            ],
+            "answers": [
+                "Cidre",
+                "Marron (caca)",
+                "Shelter",
+                "Lieutenant-colonel (Frambourg, il me semble)",
+                "Trompettes d'Haïda",
+                "Transmetteurs",
+                "Vaguemestre"
+            ]
+        },
+        {
+            "id": "travail",
+            "type": "qcm",
+            "time": 25,
+            "question": " Avant de devenir le geek qu'on connait … Eric a-t-il ?",
+            "options": [
+                "Il a été épicier",
+                "Il a travaillé dans l'or",
+                "Il a vendu des bouchons",
+                "Rien de tout cela il vivait dans une communauté hippie"
+            ],
+            "answers": [
+                "Il a vendu des bouchons",
+                "Il a travaillé dans l'or",
+                "Il a été épicier",
+                "Rien de tout cela il vivait dans une communauté hippie"
+            ]
+        },
+        {
+            "id": "deblur",
+            "type": "deblur",
+            "time": 25,
+            "question": "Kékifé sur la photo ?",
+            "options": [
+                "Il est derrière la caméra",
+                "Il prend la pose à côté de la tour de pise",
+                "Il fait un safari",
+                "Il chasse la noix de coco sauvage"
+            ],
+            "answers": [
+                "Il chasse la noix de coco sauvage"
+            ]
+        },
+        {
+            "id": "deblur",
+            "type": "deblur",
+            "time": 25,
+            "question": "Kékifé sur la photo ?",
+            "options": [
+                "Il prépare un concours de natation",
+                "Il cherche ses lunettes de soleil",
+                "De la musculation assistée",
+                "On sait pas mais c'est mignon"
+            ],
+            "answers": [
+                "Il prépare un concours de natation",
+                "Il cherche ses lunettes de soleil",
+                "De la musculation assistée",
+                "On sait pas mais c'est mignon"
+            ]
+        },
+        {
+            "id": "perfectmatch",
+            "type": "perfectmatch",
+            "time": 30,
+            "question": "Eric peut revenir dans le temps pour assister à un concert de son choix, lequel choisit-il ?",
+            "options": [
+                "The Beatles",
+                "Yves Montand",
+                "Bernard Minet",
+                "Georges Brassens"
+            ]
+        },
+        {
+            "id": "photos",
+            "type": "qcm_photo",
+            "time": 30,
+            "question": "La ou lesquelles de ces photos sont prises par Eric ?",
+            "options": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ],
+            "answers": [
+                "B",
+                "C",
+                "D"
+            ]
         },
         {
             "id": "outro",

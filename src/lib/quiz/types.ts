@@ -17,11 +17,13 @@ export type QuizQuestionBase = {
 	noreading?: boolean;
 };
 
+export type QuizOptionAnswer = number | string;
+
 export type QuizQuestionQcm = QuizQuestionBase & {
 	type: 'qcm';
 	options: string[];
 	multiple?: boolean;
-	answers?: string[];
+	answers?: QuizOptionAnswer[];
 };
 
 export type QuizQuestionSorting = QuizQuestionBase & {

@@ -6,6 +6,7 @@ import type * as Party from "partykit/server";
 import data from "../src/lib/assets/data.json";
 
 const QUESTIONS = data.questions;
+const QCM_OPTION_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 type Player = {
     id: string;
@@ -440,6 +441,46 @@ export default class QuizServer implements Party.Server {
         this.broadcastState();
     }
 
+    private normalizeQcmAnswer(value: unknown, options: string[]): number | null {
+        if (typeof value === 'number' && Number.isInteger(value)) {
+            return value >= 1 && value <= options.length ? value : null;
+        }
+
+        if (typeof value !== 'string') return null;
+
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+
+        const parsed = Number(trimmed);
+        if (Number.isInteger(parsed) && parsed >= 1 && parsed <= options.length) {
+            return parsed;
+        }
+
+        const upper = trimmed.toUpperCase();
+        if (upper.length === 1) {
+            const labelIndex = QCM_OPTION_LABELS.indexOf(upper);
+            if (labelIndex >= 0 && labelIndex < options.length) {
+                return labelIndex + 1;
+            }
+        }
+
+        const optionIndex = options.findIndex((option) => option === trimmed);
+        return optionIndex >= 0 ? optionIndex + 1 : null;
+    }
+
+    private normalizeQcmAnswers(value: unknown, options: string[]): number[] {
+        const rawValues = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+        const normalized: number[] = [];
+
+        for (const raw of rawValues) {
+            const answerIndex = this.normalizeQcmAnswer(raw, options);
+            if (answerIndex === null || normalized.includes(answerIndex)) continue;
+            normalized.push(answerIndex);
+        }
+
+        return normalized;
+    }
+
     private scoreEstimate(
                     guessRaw: unknown,
                     correctRaw: unknown,
@@ -500,8 +541,25 @@ export default class QuizServer implements Party.Server {
 
             const type = String(currentQ.type || '');
 
-            // QCM / Sorting: strict order-insensitive equality against answers.
-            if (type === 'qcm' || type === 'sorting') {
+            // QCM: accept numeric indices, letters, or legacy option labels.
+            if (type === 'qcm') {
+                if (!Array.isArray(currentQ.answers)) return;
+
+                const options = Array.isArray(currentQ.options) ? currentQ.options.map(String) : [];
+                const correctAnswers = this.normalizeQcmAnswers(currentQ.answers, options).sort((a, b) => a - b);
+                const playerAns = this.normalizeQcmAnswers(ans, options).sort((a, b) => a - b);
+                const isCorrect =
+                    playerAns.length === correctAnswers.length &&
+                    playerAns.every((answerIndex, index) => answerIndex === correctAnswers[index]);
+
+                const points = isCorrect ? 10 : 0;
+                this.state.players[pid].score += points;
+                this.state.lastRoundResults[pid] = { correct: isCorrect, points };
+                return;
+            }
+
+            // Sorting: strict order-insensitive equality against answers.
+            if (type === 'sorting') {
                 if (!Array.isArray(currentQ.answers)) return;
 
                 const correctAnswers = currentQ.answers.map(String);

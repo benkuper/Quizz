@@ -6,6 +6,7 @@
 	import FastFingersView from './types/FastFingersView.svelte';
 	import MediaView from './types/MediaView.svelte';
 	import VrWhackView from './types/VrWhackView.svelte';
+	import QuestionImageStrip from './QuestionImageStrip.svelte';
 
 	type Props = {
 		status: GameStatus;
@@ -28,6 +29,7 @@
 	{:else}
 		{#if type !== 'media'}
 			<h2 class="q-text">{text(question)}</h2>
+			<QuestionImageStrip questionId={question.id} />
 		{/if}
 		{#if type === 'qcm'}
 			<QcmView {status} question={question as any} />

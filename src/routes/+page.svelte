@@ -2,6 +2,7 @@
 	import type PartySocket from 'partysocket';
 	import { fade, fly } from 'svelte/transition';
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
+	import QcmQuestion from '$lib/components/quiz/player/types/QcmQuestion.svelte';
 	import type { BroadcastState, QuizQuestion } from '$lib/quiz/types';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { HAPTICS, vibrate, type VibrationPattern } from '$lib/config/haptics.svelte';
@@ -11,7 +12,6 @@
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
-	let connId: string | null = $state(null);
 	let playerId: string | null = $state(null);
 	let gameState: any = $state(null);
 
@@ -25,7 +25,6 @@
 	// Haptics (phone vibration) — configurable via src/lib/config/haptics.svelte.ts
 	let prevStatus: string | null = null;
 	let prevQuestionId: string | null = null;
-	let lastVibrationAt = 0;
 
 	// Keep the screen awake on phones/tablets (best-effort, browser support varies).
 	const wakeLock = createScreenWakeLock();
@@ -69,17 +68,6 @@
 		});
 	}
 
-	function handleInteraction() {
-		markAudioUnlocked();
-		// Standard buzz (200ms)
-		vibrate(200);
-	}
-
-	function handleDoublePulse() {
-		markAudioUnlocked();
-		// Vibrate 100ms, wait 50ms, vibrate 100ms
-		vibrate([100, 50, 100]);
-	}
 	// Fullscreen (best-effort): supported on most Android/desktop browsers.
 	let canFullscreen = $state(false);
 	let isFullscreen = $state(false);
@@ -88,18 +76,9 @@
 	let answer: unknown = $state(null);
 	let hasSubmitted: boolean = $state(false);
 	let lastSubmittedTimeLeft: number | null = $state(null);
-	let lastSubmittedAt: number | null = $state(null);
 
 	// if question is media, we enter "contemplate" mode (no UI)
 	let contemplateMode = $derived(gameState?.question?.type === 'media');
-
-	const hapticsAvailable = $derived.by(() => {
-		return typeof navigator !== 'undefined' && typeof (navigator as any).vibrate === 'function';
-	});
-	const hapticsStatusLabel = $derived.by(() => {
-		if (!hapticsAvailable) return '';
-		return HAPTICS.enabled ? 'Vibration on' : 'Vibration off';
-	});
 
 	const myScore = $derived(
 		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.score) ?? 0
@@ -114,6 +93,12 @@
 		((gameState as BroadcastState | null)?.question as QuizQuestion | undefined) ?? undefined
 	);
 	const qType = $derived(String(q?.type || ''));
+	const qcmUsesPhoneShell = $derived.by(() => {
+		if (qType !== 'qcm') return false;
+		const options = (q as any)?.options;
+		const count = Array.isArray(options) ? options.length : 0;
+		return count > 0 && count <= 4;
+	});
 
 	const estimateMaxPoints = $derived.by(() => {
 		if (qType !== 'estimate') return null;
@@ -195,7 +180,6 @@
 		answer = null;
 		hasSubmitted = false;
 		lastSubmittedTimeLeft = null;
-		lastSubmittedAt = null;
 	}
 
 	function ensureJoined() {
@@ -252,7 +236,6 @@
 
 		s.onclose = () => {
 			connected = false;
-			connId = null;
 			joined = false;
 			stopPings();
 		};
@@ -261,7 +244,6 @@
 			const msg = JSON.parse(evt.data);
 
 			if (msg.type === 'hello') {
-				connId = msg.id;
 				return;
 			}
 
@@ -279,7 +261,10 @@
 				// this question as well (useful after kicks / reconnects).
 				if (becamePresent) {
 					const status = String((msg.data as any)?.status ?? '');
-					const qid = typeof (msg.data as any)?.question?.id === 'string' ? (msg.data as any).question.id : '';
+					const qid =
+						typeof (msg.data as any)?.question?.id === 'string'
+							? (msg.data as any).question.id
+							: '';
 					const introSound =
 						typeof (msg.data as any)?.question?.introSound === 'string'
 							? String((msg.data as any).question.introSound)
@@ -315,7 +300,6 @@
 				// Ack from server with the authoritative timer value
 				hasSubmitted = true;
 				if (typeof msg.timeLeft === 'number') lastSubmittedTimeLeft = msg.timeLeft;
-				if (typeof msg.submittedAt === 'number') lastSubmittedAt = msg.submittedAt;
 			}
 
 			if (msg.type === 'vibrate') {
@@ -408,16 +392,19 @@
 		socket.send(JSON.stringify({ type: 'submit_answer', answer: payload }));
 	}
 
-	function submitCurrent() {
+	function handleAnswerChange(next: unknown) {
+		answer = next;
+		if (gameState?.status === 'reading') return;
 		if (!q) return;
 		if (qType === 'media') return;
+		if (qType === 'fastFingers' || qType === 'vrwhack') return;
 		if (qType === 'estimate') {
-			const n = Number(answer);
+			const n = Number(next);
 			if (!Number.isFinite(n)) return;
 			submitAnswer(n);
 			return;
 		}
-		submitAnswer(answer);
+		submitAnswer(next);
 	}
 
 	function autoSubmit(payload: unknown) {
@@ -432,21 +419,6 @@
 			return;
 		}
 		// default: no-op for other types
-	}
-
-	function canSubmit() {
-		if (gameState?.status === 'reading') return false;
-		if (!q) return false;
-		if (qType === 'media') return false;
-		if (qType === 'estimate') return String(answer ?? '').trim().length > 0;
-		if (qType === 'fastFingers') return false;
-		if (qType === 'vrwhack') return false;
-		if (Array.isArray(answer)) return answer.length > 0;
-		return Boolean(answer);
-	}
-
-	function submitLabel() {
-		return hasSubmitted ? 'Update submission' : 'Submit';
 	}
 
 	$effect(() => {
@@ -510,22 +482,7 @@
 	onpointerdown={markAudioUnlocked}
 >
 	<div class="mx-auto flex h-full max-w-md flex-col px-4 py-4">
-		<header class="mb-4 flex items-center justify-between">
-			<div>
-				<div class="text-xs text-slate-400">Quizz</div>
-				<h1 class="text-lg font-semibold">Player</h1>
-				{#if hapticsAvailable}
-					<div class="mt-1 inline-flex items-center gap-2 text-[0.7rem] text-slate-400" ontouchstart={handleInteraction}>
-						<span
-							class={HAPTICS.enabled
-								? 'h-2 w-2 rounded-full bg-emerald-400'
-								: 'h-2 w-2 rounded-full bg-slate-500'}
-							title={hapticsStatusLabel}
-						></span>
-						<span>{hapticsStatusLabel}</span>
-					</div>
-				{/if}
-			</div>
+		<header class="mb-4 flex items-center justify-end">
 			<div class="flex items-center gap-3">
 				{#if canFullscreen}
 					<button
@@ -536,10 +493,7 @@
 						{isFullscreen ? 'Exit' : 'Fullscreen'}
 					</button>
 				{/if}
-				<div class="text-right">
-					<div class="text-xs text-slate-400">{connected ? 'Online' : 'Offline'}</div>
-					<div class="text-sm font-semibold">{myScore} pts</div>
-				</div>
+				<div class="text-sm font-semibold">{myScore} pts</div>
 			</div>
 		</header>
 
@@ -584,56 +538,101 @@
 						{Object.keys(gameState.players || {}).length} player(s) connected
 					</div>
 				</section>
-				{:else if gameState.status == "question" || gameState.status === 'reading'}
-				<section class="space-y-4" in:fly={{ y: 14, duration: 200 }}>
-					<div class="rounded-2xl bg-slate-900 p-4">
-						<div class="flex items-center justify-between">
-							<div class="text-xs text-slate-400">
-								Question {gameState.actualQuestionIndex} / {gameState.totalActualQuestions}
-							</div>
-							{#if qType !== 'media'}
+			{:else if gameState.status == 'question' || gameState.status === 'reading'}
+				{#if qcmUsesPhoneShell}
+					<section class="mx-auto w-full max-w-[25rem]" in:fly={{ y: 14, duration: 200 }}>
+						<div
+							class="relative aspect-[434/776] overflow-hidden rounded-[2.5rem] shadow-[0_2rem_4rem_rgba(0,0,0,0.55)]"
+						>
+							<img
+								src="/phone_bg.png"
+								alt=""
+								class="pointer-events-none absolute inset-0 h-full w-full object-cover select-none"
+								draggable="false"
+							/>
+
+							<div class="absolute top-[4.5%] right-[6%]">
 								{#if gameState.status === 'reading'}
-									<div class="text-xs font-bold text-indigo-400 animate-pulse">READING</div>
+									<div
+										class="animate-pulse rounded-full bg-slate-950/72 px-3 py-1 text-[0.68rem] font-black tracking-[0.22em] text-indigo-300 backdrop-blur-sm"
+									>
+										Reading
+									</div>
 								{:else}
-									<div class="text-sm font-bold" class:text-red-400={gameState.timer < 5}>
+									<div
+										class="rounded-full bg-slate-950/72 px-3 py-1 text-sm font-black text-slate-100 backdrop-blur-sm"
+										class:text-red-300={gameState.timer < 5}
+									>
 										{gameState.timer}s
 									</div>
 								{/if}
+							</div>
+
+							{#key q?.id}
+								<QcmQuestion
+									question={q as any}
+									value={answer as any}
+									onChange={handleAnswerChange}
+									embeddedInPhoneShell
+								/>
+							{/key}
+
+							{#if !contemplateMode}
+								<div
+									class="absolute inset-x-[8%] bottom-[4%] rounded-[1.1rem] bg-slate-950/62 px-4 py-2.5 text-center text-[0.8rem] text-slate-200 backdrop-blur-sm"
+								>
+									{#if hasSubmitted}
+										Last action submitted{#if lastSubmittedTimeLeft !== null}
+											at {lastSubmittedTimeLeft}s left{/if}.
+									{:else}
+										Not submitted yet.
+									{/if}
+								</div>
 							{/if}
 						</div>
-						<div class="mt-3 text-lg leading-snug font-semibold">{q?.question}</div>
-					</div>
+					</section>
+				{:else}
+					<section class="space-y-4" in:fly={{ y: 14, duration: 200 }}>
+						{#if qType !== 'media'}
+							<div class="flex justify-end">
+								{#if gameState.status === 'reading'}
+									<div
+										class="animate-pulse rounded-full bg-slate-900/90 px-3 py-1 text-xs font-bold text-indigo-300 backdrop-blur-sm"
+									>
+										READING
+									</div>
+								{:else}
+									<div
+										class="rounded-full bg-slate-900/90 px-3 py-1 text-sm font-bold text-slate-100 backdrop-blur-sm"
+										class:text-red-300={gameState.timer < 5}
+									>
+										{gameState.timer}s
+									</div>
+								{/if}
+							</div>
+						{/if}
 
-					{#key q?.id}
-						<PlayerQuestionRenderer
-							question={q}
-							value={answer}
-							onChange={(v) => (answer = v)}
-							onAutoSubmit={autoSubmit}
-						/>
-					{/key}
+						{#key q?.id}
+							<PlayerQuestionRenderer
+								question={q}
+								value={answer}
+								onChange={handleAnswerChange}
+								onAutoSubmit={autoSubmit}
+							/>
+						{/key}
 
-					{#if qType !== 'fastFingers' && qType !== 'media' && qType !== 'vrwhack'}
-						<button
-							class="w-full rounded-2xl bg-indigo-500 px-4 py-4 text-base font-bold text-white active:scale-[0.99] disabled:opacity-60"
-							disabled={!canSubmit()}
-							onclick={submitCurrent}
-						>
-							{submitLabel()}
-						</button>
-					{/if}
-
-					{#if !contemplateMode}
-						<div class="rounded-2xl bg-slate-900 p-4 text-center text-sm text-slate-300">
-							{#if hasSubmitted}
-								Submitted{#if lastSubmittedTimeLeft !== null}
-									at {lastSubmittedTimeLeft}s left{/if}. You can still update until time runs out.
-							{:else}
-								Not submitted yet.
-							{/if}
-						</div>
-					{/if}
-				</section>
+						{#if !contemplateMode}
+							<div class="rounded-2xl bg-slate-900 p-4 text-center text-sm text-slate-300">
+								{#if hasSubmitted}
+									Last action submitted{#if lastSubmittedTimeLeft !== null}
+										at {lastSubmittedTimeLeft}s left{/if}.
+								{:else}
+									Not submitted yet.
+								{/if}
+							</div>
+						{/if}
+					</section>
+				{/if}
 			{:else if gameState.status === 'review'}
 				<section
 					class="rounded-2xl p-5 text-center"

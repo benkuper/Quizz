@@ -38,7 +38,7 @@
                 "35 ans, il a même joué dedans"
             ],
             "answers": [
-                "7 ans"
+                2
             ]
         },
         {
@@ -47,25 +47,13 @@
             "question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
             "options": [
                 "Le Redoutable, célèbre sous-marin nucléaire Français",
-                "Une Audi A4 qui n'est pas tombé en panne (exemplaire unique au monde)",
-                "Le trans-sibérien. C'était froid, mais c'était beau.",
+                "Une Audi A4 qui n'est pas tombée en panne (exemplaire unique au monde)",
+                "Le transsibérien. C'était froid, mais c'était beau.",
                 "La Cadillac rose de ses rêves"
             ],
             "answers": [
-                "La Cadillac rose de ses rêves"
+                4
             ]
-        },
-        {
-            "id": "intermede",
-            "type": "media",
-            "question": "Intermede",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
         },
         {
             "id": "autographe",
@@ -88,7 +76,7 @@
                 "Pierre Niney"
             ],
             "answers": [
-                "Alain (de loin)"
+                3
             ]
         },
         {
@@ -102,10 +90,10 @@
                 "Le déménagement à St-Philbert-des-Champs"
             ],
             "answers": [
-                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
-                "Son mariage avec Fabienne",
-                "Son brevet de pilote",
-                "Le déménagement à St-Philbert-des-Champs"
+                3,
+                1,
+                2,
+                4
             ]
         },
         {
@@ -119,7 +107,7 @@
                 "Robert"
             ],
             "answers": [
-                "Antonio"
+                2
             ]
         },
         {
@@ -134,11 +122,11 @@
                 "H2G2"
             ],
             "answers": [
-                "DB2"
+                2
             ]
         },
         {
-            "id": "magazine_cover",
+            "id": "magazine",
             "type": "qcm",
             "time": 25,
             "question": [
@@ -151,7 +139,7 @@
                 "Lui-même"
             ],
             "answers": [
-                "Les trucs de geek"
+                3
             ]
         },
         {
@@ -166,8 +154,8 @@
                 "Il pratique le Wingsuit"
             ],
             "answers": [
-                "Il a fait du parapente",
-                "Il a piloté des avions"
+                2,
+                3
             ]
         },
         {
@@ -185,13 +173,13 @@
                 "Europe"
             ],
             "answers": [
-                "Afrique",
-                "Antarctique"
+                3,
+                6
             ]
         },
         {
             "id": "militaire",
-            "type": "burger-de-la-mort",
+            "type": "burger",
             "time": 25,
             "question": "Questions militaires",
             "options": [
@@ -222,13 +210,12 @@
                 "Il a été épicier",
                 "Il a travaillé dans l'or",
                 "Il a vendu des bouchons",
-                "Rien de tout cela il vivait dans une communauté hippie"
+                "Il a vécu dans une communauté hippie"
             ],
             "answers": [
-                "Il a vendu des bouchons",
-                "Il a travaillé dans l'or",
-                "Il a été épicier",
-                "Rien de tout cela il vivait dans une communauté hippie"
+                1,
+                2,
+                3
             ]
         },
         {
@@ -243,7 +230,7 @@
                 "Il chasse la noix de coco sauvage"
             ],
             "answers": [
-                "Il chasse la noix de coco sauvage"
+                4
             ]
         },
         {
@@ -258,10 +245,10 @@
                 "On sait pas mais c'est mignon"
             ],
             "answers": [
-                "Il prépare un concours de natation",
-                "Il cherche ses lunettes de soleil",
-                "De la musculation assistée",
-                "On sait pas mais c'est mignon"
+                1,
+                2,
+                3,
+                4
             ]
         },
         {
@@ -278,19 +265,19 @@
         },
         {
             "id": "photos",
-            "type": "qcm_photo",
+            "type": "qcm",
             "time": 30,
             "question": "La ou lesquelles de ces photos sont prises par Eric ?",
             "options": [
-                "A",
-                "B",
-                "C",
-                "D"
+                "Castafiore",
+                "Le Chardon, c'est vachement bon !",
+                "Dîner en famille",
+                "Clair de Lune"
             ],
             "answers": [
-                "B",
-                "C",
-                "D"
+                2,
+                3,
+                4
             ]
         },
         {

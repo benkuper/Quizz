@@ -8,6 +8,7 @@
 	import { urlState } from '$lib/url.svelte';
 	import SignContainer from '$lib/components/projector/SignContainer.svelte';
 	import PlayerInfo from '$lib/components/projector/PlayerInfo.svelte';
+	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
 	import { isKaraokeQuestionType, isPassiveQuestionType } from '$lib/quiz/questionTypes';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
@@ -33,9 +34,15 @@
 			: []
 	);
 
+	const teamOrder = Object.fromEntries(TEAM_DEFINITIONS.map((team, index) => [team.id, index]));
+
 	const playersList = $derived.by(() =>
 		gameState?.players
-			? (Object.values(gameState.players) as any[]).filter((player: any) => player.enabled)
+			? [...(Object.values(gameState.players) as any[])].filter((player: any) => player.enabled).sort(
+				(a: any, b: any) =>
+					(teamOrder[String(a?.id ?? '')] ?? Number.MAX_SAFE_INTEGER) -
+					(teamOrder[String(b?.id ?? '')] ?? Number.MAX_SAFE_INTEGER)
+			)
 			: []
 	);
 	const correctPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === true));

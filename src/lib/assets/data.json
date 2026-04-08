@@ -1,12 +1,22 @@
 {
-    "teams":
-    {
-        "team1": "Team Eric",
-        "team2": "Team Fabienne",
-        "team3": "Team Enfants",
-        "team4": "Team Invités",
-        "team5": "Team Surprise"
-    },
+	"teams": {
+		"chantal_henri": "Team Chantal Henri",
+		"charlie": "Team Charlie",
+		"charlotte": "Team Charlotte",
+		"denis_amina": "Team Denis Amina",
+		"elodie": "Team Elodie",
+		"eric": "Team Eric",
+		"fabienne": "Team Fabienne",
+		"florence": "Team Florence",
+		"fred": "Team Fred",
+		"jean": "Team Jean",
+		"julien": "Team Julien",
+		"karine": "Team Karine",
+		"perrine": "Team Perrine",
+		"philippe": "Team Philippe",
+		"susan": "Team Susan",
+		"triplettes": "Team Triplettes"
+	},
 	"questionTypes": {
 		"media": "Media Interlude",
 		"qcm": "QCM",

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getTeamBadgeUrl } from '$lib/quiz/teamAssets';
+	import TeamBadge from '$lib/components/shared/TeamBadge.svelte';
 
 	type Props = {
 		player: any;
@@ -7,9 +7,6 @@
 	};
 
 	let { player, gameStatus }: Props = $props();
-	let badgeMissing = $state(false);
-
-	const badgeUrl = $derived.by(() => getTeamBadgeUrl(String(player?.id ?? '')));
 	const fallbackLabel = $derived.by(() => {
 		const name = String(player?.name ?? '').trim();
 		if (!name) return '?';
@@ -19,6 +16,7 @@
 			.map((part) => part[0]?.toUpperCase() ?? '')
 			.join('');
 	});
+	const winningSpin = $derived(gameStatus === 'review' && player?.lastCorrect === true);
 
 	let playerStatus = $derived.by(() => {
 		if (!player.connected) return 'offline';
@@ -33,11 +31,13 @@
 
 <div class="player-info-card {playerStatus}">
 	<div class="badge-shell" class:dimmed={!player.connected}>
-		{#if badgeUrl && !badgeMissing}
-			<img src={badgeUrl} alt={player.name} class="badge" onerror={() => (badgeMissing = true)} />
-		{:else}
-			<div class="badge-fallback">{fallbackLabel}</div>
-		{/if}
+		<TeamBadge
+			teamId={String(player?.id ?? '')}
+			teamName={String(player?.name ?? fallbackLabel)}
+			spinning={winningSpin}
+			spinDuration="12s"
+			dimmed={!player.connected}
+		/>
 	</div>
 	<div class="text-block">
 		<div class="team-name">{player.name}</div>
@@ -65,33 +65,11 @@
 		height: 3.5rem;
 		width: 3.5rem;
 		flex-shrink: 0;
-		display: grid;
-		place-items: center;
 		border-radius: 9999px;
-		overflow: hidden;
-		background: rgba(255, 255, 255, 0.08);
-		border: 0.0625rem solid rgba(255, 255, 255, 0.1);
 	}
 
 	.badge-shell.dimmed {
-		filter: grayscale(1);
 		opacity: 0.65;
-	}
-
-	.badge {
-		height: 100%;
-		width: 100%;
-		object-fit: cover;
-	}
-
-	.badge-fallback {
-		display: grid;
-		place-items: center;
-		height: 100%;
-		width: 100%;
-		font-size: 1.1rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
 	}
 
 	.text-block {

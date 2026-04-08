@@ -5,7 +5,7 @@ export function isPassiveQuestionType(type: unknown) {
 
 export function isQcmLikeQuestionType(type: unknown) {
 	const normalized = String(type ?? '');
-	return normalized === 'qcm' || normalized === 'perfectmatch';
+	return normalized === 'qcm' || normalized === 'deblur' || normalized === 'perfectmatch';
 }
 
 export function isPerfectMatchQuestionType(type: unknown) {

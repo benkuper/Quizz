@@ -3,9 +3,9 @@
 	import type PartySocket from 'partysocket';
 	import { fade, fly } from 'svelte/transition';
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
+	import TeamBadge from '$lib/components/shared/TeamBadge.svelte';
 	import QcmQuestion from '$lib/components/quiz/player/types/QcmQuestion.svelte';
 	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
-	import { getTeamBadgeUrl } from '$lib/quiz/teamAssets';
 	import type { BroadcastState, QuizQuestion } from '$lib/quiz/types';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { HAPTICS, vibrate, type VibrationPattern } from '$lib/config/haptics.svelte';
@@ -23,7 +23,6 @@
 	let selectedTeamId: string | null = $state(null);
 	let joiningTeamId: string | null = $state(null);
 	let joinError = $state('');
-	let missingBadgeIds = $state([] as string[]);
 
 	let pingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -237,16 +236,6 @@
 		} catch {
 			// ignore
 		}
-	}
-
-	function markBadgeMissing(teamId: string) {
-		if (missingBadgeIds.includes(teamId)) return;
-		missingBadgeIds = [...missingBadgeIds, teamId];
-	}
-
-	function teamBadgeUrl(teamId: string) {
-		if (missingBadgeIds.includes(teamId)) return null;
-		return getTeamBadgeUrl(teamId);
 	}
 
 	function resetAnswerUi() {
@@ -542,11 +531,17 @@
 	>
 		{#if !immersivePhoneShell}
 			<header class="mb-4 flex items-center justify-end">
-				<div class="text-right text-sm">
+				<div class="flex items-center gap-3 text-right text-sm">
 					{#if selectedTeam}
-						<div class="font-semibold">{selectedTeam.name}</div>
+						<div class="h-14 w-14 shrink-0">
+							<TeamBadge teamId={String(selectedTeam.id)} teamName={String(selectedTeam.name)} />
+						</div>
+						<div>
+							<div class="font-semibold">{selectedTeam.name}</div>
+							<div class="text-slate-300">You are in.</div>
+						</div>
 					{/if}
-					<div class="font-semibold">{myScore} pts</div>
+					<div class="min-w-[4.5rem] font-semibold">{myScore} pts</div>
 				</div>
 			</header>
 		{/if}
@@ -579,22 +574,7 @@
 									onclick={() => joinGame(String(team.id))}
 								>
 									<div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-800 bg-slate-900">
-										{#if teamBadgeUrl(String(team.id))}
-											<img
-												src={teamBadgeUrl(String(team.id))!}
-												alt={String(team.name)}
-												class="h-full w-full object-cover"
-												onerror={() => markBadgeMissing(String(team.id))}
-											/>
-										{:else}
-											<div class="text-lg font-black uppercase tracking-[0.18em] text-slate-200">
-												{String(team.name)
-													.split(/\s+/)
-													.slice(0, 2)
-													.map((part) => part[0]?.toUpperCase() ?? '')
-													.join('')}
-											</div>
-										{/if}
+										<TeamBadge teamId={String(team.id)} teamName={String(team.name)} />
 									</div>
 
 									<div class="min-w-0 flex-1">
@@ -643,9 +623,14 @@
 									style="padding-top: max(env(safe-area-inset-top), 1rem);"
 								>
 								{#if selectedTeam}
-									<div class="max-w-[70%] rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 backdrop-blur-sm">
-										<div class="truncate text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Team</div>
-										<div class="truncate text-[1.15rem] font-semibold text-white">{selectedTeam.name}</div>
+									<div class="flex max-w-[72%] items-center gap-3 rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 backdrop-blur-sm">
+										<div class="h-14 w-14 shrink-0">
+											<TeamBadge teamId={String(selectedTeam.id)} teamName={String(selectedTeam.name)} />
+										</div>
+										<div class="min-w-0">
+											<div class="truncate text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Team</div>
+											<div class="truncate text-[1.15rem] font-semibold text-white">{selectedTeam.name}</div>
+										</div>
 									</div>
 								{/if}
 

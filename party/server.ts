@@ -180,7 +180,7 @@ export default class QuizServer implements Party.Server {
 
     private isQcmLikeQuestion(q: any) {
         const type = String(q?.type || '');
-        return type === 'qcm' || type === 'perfectmatch';
+        return type === 'qcm' || type === 'deblur' || type === 'perfectmatch';
     }
 
     private isPassiveQuestion(q: any) {

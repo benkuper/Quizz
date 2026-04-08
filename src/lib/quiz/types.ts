@@ -27,6 +27,20 @@ export type QuizQuestionQcm = QuizQuestionBase & {
 	answers?: QuizOptionAnswer[];
 };
 
+export type QuizQuestionDeblur = QuizQuestionBase & {
+	type: 'deblur';
+	options: string[];
+	multiple?: boolean;
+	answers?: QuizOptionAnswer[];
+};
+
+export type QuizQuestionPerfectMatch = QuizQuestionBase & {
+	type: 'perfectmatch';
+	options: string[];
+	multiple?: boolean;
+	answers?: QuizOptionAnswer[];
+};
+
 export type QuizQuestionSorting = QuizQuestionBase & {
 	type: 'sorting';
 	options: string[];
@@ -137,6 +151,8 @@ export type KaraokePlaybackSync = {
 
 export type QuizQuestion =
 	| QuizQuestionQcm
+	| QuizQuestionDeblur
+	| QuizQuestionPerfectMatch
 	| QuizQuestionSorting
 	| QuizQuestionEstimate
 	| QuizQuestionFastFingers
@@ -178,6 +194,7 @@ export type BroadcastState = {
 	players: Record<string, PlayerView>;
 	answerCount: number;
 	optionReveal?: OptionRevealState;
+	awaitingAdminAnswerSelection?: boolean;
 	roundSummary?: {
 		estimate?: {
 			unit?: EstimateUnit;

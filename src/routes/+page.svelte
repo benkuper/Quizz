@@ -12,7 +12,7 @@
 	import { createAudioPlayer } from '$lib/utils/audio.svelte';
 	import { createScreenWakeLock } from '$lib/utils/wakeLock.svelte';
 	import { getMedia } from '$lib/url.svelte';
-	import { isPassiveQuestionType } from '$lib/quiz/questionTypes';
+	import { isPassiveQuestionType, isQcmLikeQuestionType } from '$lib/quiz/questionTypes';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	let socket: PartySocket | null = $state(null);
@@ -91,6 +91,13 @@
 
 	// Passive rounds (media, karaoke) hide answer submission chrome.
 	let contemplateMode = $derived(isPassiveQuestionType(gameState?.question?.type));
+	type TeamLobbyEntry = {
+		id: string;
+		name: string;
+		enabled: boolean;
+		connected: boolean;
+		score: number;
+	};
 	const selectedTeam = $derived.by(() => {
 		if (selectedTeamId && gameState?.players?.[selectedTeamId]) {
 			return gameState.players[selectedTeamId];
@@ -98,20 +105,30 @@
 
 		return TEAM_DEFINITIONS.find((team) => team.id === selectedTeamId) ?? null;
 	});
-	const enabledTeams = $derived.by(() => {
+	const enabledTeams = $derived.by<TeamLobbyEntry[]>(() => {
 		if (gameState?.players) {
-			return Object.values(gameState.players).filter((team: any) => team.enabled);
+			return (Object.values(gameState.players) as any[])
+				.filter((team: any) => team.enabled)
+				.map(
+					(team: any): TeamLobbyEntry => ({
+						id: String(team.id ?? ''),
+						name: String(team.name ?? ''),
+						enabled: Boolean(team.enabled),
+						connected: Boolean(team.connected),
+						score: Number(team.score ?? 0)
+					})
+				);
 		}
 
-		return TEAM_DEFINITIONS.map((team) => ({
+		return TEAM_DEFINITIONS.map((team): TeamLobbyEntry => ({
 			...team,
 			enabled: true,
 			connected: false,
 			score: 0
 		}));
 	});
-	const availableTeams = $derived.by(() =>
-		enabledTeams.filter((team: any) => !team.connected)
+	const availableTeams = $derived.by<TeamLobbyEntry[]>(() =>
+		enabledTeams.filter((team) => !team.connected)
 	);
 
 	const myScore = $derived(
@@ -128,7 +145,7 @@
 	);
 	const qType = $derived(String(q?.type || ''));
 	const qcmUsesPhoneShell = $derived.by(() => {
-		if (qType !== 'qcm') return false;
+		if (!isQcmLikeQuestionType(qType)) return false;
 		const options = (q as any)?.options;
 		const count = Array.isArray(options) ? options.length : 0;
 		return count > 0 && count <= 4;

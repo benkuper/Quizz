@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
-	import { urlState } from '$lib/url.svelte';
+	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	function appPath(path: string) {
 		const normalized = path.startsWith('/') ? path : `/${path}`;
@@ -9,11 +10,8 @@
 			: resolveAppAssetUrl(normalized);
 	}
 
-	function getPhoneSrc(index: number) {
-		const params = new URLSearchParams({
-			playerId: `phone-${index}`,
-			name: `Super Phone ${index}`
-		});
+	function getTeamSrc(teamId: string) {
+		const params = new URLSearchParams({ teamId });
 		return `${appPath('/')}?${params.toString()}`;
 	}
 </script>
@@ -34,23 +32,18 @@
 			<iframe title="Admin View" class="panel-iframe" src={appPath('/admin')}></iframe>
 		</div>
 
-		<div class="right">
-			<div class="top">
-				<iframe title="Admin View" class="panel-iframe" src="{urlState.basePath}/admin"></iframe>
-			</div>
-			<div class="bottom">
-				{#each TEAM_DEFINITIONS.slice(0, 2) as team, index}
-					<div class="phone-frame">
-						<div class="phone-header">{team.name}</div>
-						<div class="device-wrap">
-							<iframe
-								title={team.name}
-								class="phone-iframe"
-								src="{urlState.basePath}/?teamId={encodeURIComponent(team.id)}"
-								width="1080"
-								height="1920"
-							></iframe>
-						</div>
+		<div class="bottom">
+			{#each TEAM_DEFINITIONS as team}
+				<div class="phone-frame">
+					<div class="phone-header">{team.name}</div>
+					<div class="device-wrap">
+						<iframe
+							title={team.name}
+							class="phone-iframe"
+							src={getTeamSrc(team.id)}
+							width="1080"
+							height="1920"
+						></iframe>
 					</div>
 				</div>
 			{/each}
@@ -83,18 +76,19 @@
 	.right {
 		display: flex;
 		flex-direction: column;
+		flex: 0 0 min(42vw, 52rem);
+		min-width: 0;
 	}
 
 	.top {
 		display: flex;
-		grid-template-columns: 1fr 420px;
 		gap: 12px;
 		flex: 1;
 		min-height: 0;
 	}
 	.bottom {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 12px;
 		flex: 1;
 		min-height: 0;
@@ -102,7 +96,6 @@
 
 	.phone-frame {
 		position: relative;
-		width: 220px;
 		border-radius: 20px;
 		display: flex;
 		flex-direction: column;
@@ -116,6 +109,7 @@
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: contain;
+		overflow: hidden;
 	}
 	.phone-header {
 		position: absolute;
@@ -139,9 +133,10 @@
 	}
 
 	.phone-iframe {
-		height: 650px;
+		width: 151.5151515%;
+		height: 151.5151515%;
 		transform: scale(0.66);
-		flex: 1;
+		transform-origin: center;
 		border: 0;
 		border-radius: 12px;
 		background: transparent;

@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { QuizOptionAnswer, QuizQuestionQcm } from '$lib/quiz/types';
+	import type {
+		QuizOptionAnswer,
+		QuizQuestionDeblur,
+		QuizQuestionPerfectMatch,
+		QuizQuestionQcm
+	} from '$lib/quiz/types';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	function appPath(path: string) {
@@ -15,43 +20,43 @@
 		{
 			label: 'A',
 			selectedSrc: appPath('/phone_bt_A.png'),
-			left: '5.75%',
-			top: '44.1%',
-			width: '41.8%',
+			left: '1.75%',
+			top: '34.8%',
+			width: '48.8%',
 			height: '9.7%',
 			fallbackClass: 'phone-button-fallback-a'
 		},
 		{
 			label: 'B',
 			selectedSrc: appPath('/phone_bt_B.png'),
-			left: '52.2%',
-			top: '44.1%',
-			width: '41.8%',
+			left: '48.4%',
+			top: '34.8%',
+			width: '48.8%',
 			height: '9.7%',
 			fallbackClass: 'phone-button-fallback-b'
 		},
 		{
 			label: 'C',
 			selectedSrc: appPath('/phone_bt_C.png'),
-			left: '5.75%',
-			top: '56.2%',
-			width: '41.8%',
+			left: '1.75%',
+			top: '44.1%',
+			width: '48.8%',
 			height: '9.7%',
 			fallbackClass: 'phone-button-fallback-c'
 		},
 		{
 			label: 'D',
 			selectedSrc: appPath('/phone_bt_D.png'),
-			left: '52.2%',
-			top: '56.2%',
-			width: '41.8%',
+			left: '48.4%',
+			top: '44.1%',
+			width: '48.8%',
 			height: '9.7%',
 			fallbackClass: 'phone-button-fallback-d'
 		}
 	] as const;
 
 	type Props = {
-		question: QuizQuestionQcm;
+		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
 		value: QuizOptionAnswer | QuizOptionAnswer[] | null;
 		onChange: (next: QuizOptionAnswer | QuizOptionAnswer[] | null) => void;
 		embeddedInPhoneShell?: boolean;
@@ -158,8 +163,7 @@
 			<button
 				type="button"
 				class="absolute overflow-hidden rounded-[1.75rem] outline-none active:scale-[0.99]"
-				class:ring-4={isSelected(index)}
-				class:ring-white={isSelected(index)}
+				class:selected={isSelected(index)}
 				style:left={layout.left}
 				style:top={layout.top}
 				style:width={layout.width}
@@ -225,7 +229,7 @@
 	.phone-button-fallback-b,
 	.phone-button-fallback-c,
 	.phone-button-fallback-d {
-		border-radius: 1.75rem;
+		/* border-radius: 1.75rem; */
 		box-shadow:
 			inset 0 0.14rem 0.5rem rgba(255, 255, 255, 0.35),
 			inset 0 -0.18rem 0.7rem rgba(0, 0, 0, 0.25),
@@ -246,5 +250,10 @@
 
 	.phone-button-fallback-d {
 		background: linear-gradient(180deg, #ffd37a 0%, #ff8e1a 55%, #bd5400 100%);
+	}
+
+	button.selected span {
+		text-shadow: 0 0.14em 0.45em rgba(0, 0, 0, 0.75);
+		color : black;
 	}
 </style>

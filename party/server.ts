@@ -23,6 +23,9 @@ type GameState = {
     status: GameStatus;
     questionIndex: number;
     timer: number;
+    questionStartedAt: number | null;
+    awaitingAdminAnswerSelection: boolean;
+    selectedAnswerIndexes: number[];
     optionReveal: OptionRevealState;
     players: Record<string, Player>;
     lastRoundSummary?: {
@@ -77,6 +80,9 @@ export default class QuizServer implements Party.Server {
         status: 'lobby',
         questionIndex: -1,
         timer: 0,
+        questionStartedAt: null,
+        awaitingAdminAnswerSelection: false,
+        selectedAnswerIndexes: [],
         optionReveal: {
             placedOptionIndexes: [],
             focusedOptionIndex: null
@@ -168,12 +174,26 @@ export default class QuizServer implements Party.Server {
         return q && String(q.type || '') === 'media';
     }
 
+    private isPerfectMatchQuestion(q: any) {
+        return q && String(q.type || '') === 'perfectmatch';
+    }
+
+    private isQcmLikeQuestion(q: any) {
+        const type = String(q?.type || '');
+        return type === 'qcm' || type === 'deblur' || type === 'perfectmatch';
+    }
+
+    private isPassiveQuestion(q: any) {
+        const type = String(q?.type || '');
+        return type === 'media' || type === 'karaoke';
+    }
+
     private getQuestionOptionCount(q: any) {
         return Array.isArray(q?.options) ? q.options.length : 0;
     }
 
     private usesSeparateReveal(q: any) {
-        return Boolean(q?.separateReveal) && this.getQuestionOptionCount(q) > 0;
+        return Boolean(q?.separateReveal ?? true) && this.getQuestionOptionCount(q) > 0;
     }
 
     private resetOptionReveal() {
@@ -181,6 +201,30 @@ export default class QuizServer implements Party.Server {
             placedOptionIndexes: [],
             focusedOptionIndex: null
         };
+    }
+
+    private resetAdminAnswerSelection() {
+        this.state.awaitingAdminAnswerSelection = false;
+        this.state.selectedAnswerIndexes = [];
+    }
+
+    private getQcmCorrectAnswers(q: any) {
+        const options = Array.isArray(q?.options) ? q.options.map(String) : [];
+        const rawAnswers = this.isPerfectMatchQuestion(q) ? this.state.selectedAnswerIndexes : q?.answers;
+        return this.normalizeQcmAnswers(rawAnswers, options).sort((a, b) => a - b);
+    }
+
+    private selectPerfectMatchAnswer(index: number) {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        if (this.state.status !== 'review' || !this.isPerfectMatchQuestion(currentQ)) return;
+
+        const totalOptions = this.getQuestionOptionCount(currentQ);
+        if (!Number.isInteger(index) || index < 0 || index >= totalOptions) return;
+
+        this.state.selectedAnswerIndexes = [index + 1];
+        this.state.awaitingAdminAnswerSelection = false;
+        this.calculateScores();
+        this.broadcastState();
     }
 
     private getNextUnplacedOptionIndex(q: any) {
@@ -368,6 +412,12 @@ export default class QuizServer implements Party.Server {
             this.focusPlacedOption(index);
         }
 
+        if (event.type === 'admin_set_correct_answer') {
+            const index = Number(event.index);
+            if (!Number.isInteger(index) || index < 0) return;
+            this.selectPerfectMatchAnswer(index);
+        }
+
         if (event.type === 'admin_finish_round') {
             if (this.state.status !== 'question') return;
             const q = QUESTIONS[this.state.questionIndex];
@@ -380,7 +430,7 @@ export default class QuizServer implements Party.Server {
 
         if (event.type === 'admin_next') {
             if (this.state.status === 'reading') {
-                const q = QUESTIONS[this.state.questionIndex];
+                const q: any = QUESTIONS[this.state.questionIndex];
                 if (this.usesSeparateReveal(q)) {
                     this.startRevealStage();
                 } else {
@@ -389,16 +439,20 @@ export default class QuizServer implements Party.Server {
                 return;
             }
 
+            if (this.state.status === 'review' && this.state.awaitingAdminAnswerSelection) {
+                return;
+            }
+
             // If currently answering, end the round. If in review, advance.
             if (this.state.status === 'question') {
-                const q = QUESTIONS[this.state.questionIndex];
+                const q: any = QUESTIONS[this.state.questionIndex];
                 if (this.isMediaQuestion(q)) {
                     this.nextQuestion();
                 } else {
                     this.finishRoundNow();
                 }
             } else if (this.state.status === 'reveal') {
-                const q = QUESTIONS[this.state.questionIndex];
+                const q: any = QUESTIONS[this.state.questionIndex];
                 if (!this.usesSeparateReveal(q)) {
                     this.launchQuestion();
                 } else if (this.state.optionReveal.focusedOptionIndex !== null) {
@@ -433,7 +487,7 @@ export default class QuizServer implements Party.Server {
         if (event.type === 'submit_answer') {
             if (this.state.status === 'question') {
                 const currentQ = QUESTIONS[this.state.questionIndex];
-                if (this.isMediaQuestion(currentQ)) return;
+                if (this.isPassiveQuestion(currentQ)) return;
                 const playerId = this.connIdToPlayerId[sender.id];
                 if (!playerId) return;
 
@@ -447,7 +501,7 @@ export default class QuizServer implements Party.Server {
                 };
 
                 // Ack the submitter (used by player UI for "submitted" state + timeLeft multiplier)
-                const q = QUESTIONS[this.state.questionIndex];
+                const q: any = QUESTIONS[this.state.questionIndex];
                 sender.send(
                     JSON.stringify({
                         type: 'answer_ack',
@@ -462,10 +516,10 @@ export default class QuizServer implements Party.Server {
             }
         }
 
-        if (event.type === 'media_finished') {
+        if (event.type === 'media_finished' || event.type === 'passive_finished') {
             if (this.state.status !== 'question') return;
-            const currentQ = QUESTIONS[this.state.questionIndex];
-            if (!this.isMediaQuestion(currentQ)) return;
+            const currentQ: any = QUESTIONS[this.state.questionIndex];
+            if (!this.isPassiveQuestion(currentQ)) return;
 
             // Ignore stale signals.
             const qid = String(currentQ?.id ?? '');
@@ -485,6 +539,8 @@ export default class QuizServer implements Party.Server {
         this.state.status = 'lobby';
         this.state.questionIndex = -1;
         this.state.timer = 0;
+        this.state.questionStartedAt = null;
+        this.resetAdminAnswerSelection();
         this.resetOptionReveal();
         this.state.currentAnswers = {};
         this.state.lastRoundResults = {};
@@ -496,6 +552,7 @@ export default class QuizServer implements Party.Server {
     private jumpToQuestion(index: number) {
         const clamped = Math.max(0, Math.min(QUESTIONS.length - 1, Math.floor(index)));
         this.state.questionIndex = clamped;
+        this.resetAdminAnswerSelection();
         this.resetOptionReveal();
         this.state.currentAnswers = {};
         this.state.lastRoundResults = {};
@@ -512,6 +569,7 @@ export default class QuizServer implements Party.Server {
             this.interval = null;
         }
         this.state.timer = 0;
+        this.state.questionStartedAt = null;
 
         this.broadcastState();
     }
@@ -536,6 +594,7 @@ export default class QuizServer implements Party.Server {
         // If we were in review, go to next question
         if (this.state.questionIndex < QUESTIONS.length - 1) {
             this.state.questionIndex++;
+            this.resetAdminAnswerSelection();
             this.resetOptionReveal();
             this.state.currentAnswers = {};
             this.state.lastRoundResults = {};
@@ -552,18 +611,22 @@ export default class QuizServer implements Party.Server {
                 this.interval = null;
             }
             this.state.timer = 0;
+            this.state.questionStartedAt = null;
         } else {
             this.state.status = 'finished';
+            this.state.questionStartedAt = null;
         }
         this.broadcastState();
     }
 
     launchQuestion() {
         this.state.status = 'question';
+        this.resetAdminAnswerSelection();
         this.resetOptionReveal();
         const currentQ: any = QUESTIONS[this.state.questionIndex];
+        this.state.questionStartedAt = this.isPassiveQuestion(currentQ) ? Date.now() : null;
 
-        if (this.isMediaQuestion(currentQ)) {
+        if (this.isPassiveQuestion(currentQ)) {
             if (this.interval) {
                 clearInterval(this.interval);
                 this.interval = null;
@@ -603,8 +666,21 @@ export default class QuizServer implements Party.Server {
     }
 
     endRound() {
+        const currentQ: any = QUESTIONS[this.state.questionIndex];
         this.state.status = 'review';
+        this.state.questionStartedAt = null;
         this.state.optionReveal.focusedOptionIndex = null;
+
+        if (this.isPerfectMatchQuestion(currentQ)) {
+            this.state.awaitingAdminAnswerSelection = true;
+            this.state.selectedAnswerIndexes = [];
+            this.state.lastRoundResults = {};
+            this.state.lastRoundSummary = undefined;
+            this.broadcastState();
+            return;
+        }
+
+        this.resetAdminAnswerSelection();
         this.calculateScores();
         this.broadcastState();
     }
@@ -688,8 +764,16 @@ export default class QuizServer implements Party.Server {
     }
 
     calculateScores() {
-        const currentQ = QUESTIONS[this.state.questionIndex];
+        const currentQ: any = QUESTIONS[this.state.questionIndex];
         if (!currentQ) return;
+
+        for (const [pid, result] of Object.entries(this.state.lastRoundResults)) {
+            const player = this.state.players[pid];
+            if (!player) continue;
+            const previousPoints = Number(result?.points ?? 0);
+            if (!Number.isFinite(previousPoints) || previousPoints === 0) continue;
+            player.score = Math.max(0, player.score - previousPoints);
+        }
 
         if (this.isMediaQuestion(currentQ)) {
             // No scoring / summary for media interludes.
@@ -710,11 +794,10 @@ export default class QuizServer implements Party.Server {
             const type = String(currentQ.type || '');
 
             // QCM: accept numeric indices, letters, or legacy option labels.
-            if (type === 'qcm') {
-                if (!Array.isArray(currentQ.answers)) return;
-
+            if (this.isQcmLikeQuestion(currentQ)) {
                 const options = Array.isArray(currentQ.options) ? currentQ.options.map(String) : [];
-                const correctAnswers = this.normalizeQcmAnswers(currentQ.answers, options).sort((a, b) => a - b);
+                const correctAnswers = this.getQcmCorrectAnswers(currentQ);
+                if (correctAnswers.length === 0) return;
                 const playerAns = this.normalizeQcmAnswers(ans, options).sort((a, b) => a - b);
                 const isCorrect =
                     playerAns.length === correctAnswers.length &&
@@ -818,15 +901,29 @@ export default class QuizServer implements Party.Server {
     }
 
     broadcastState() {
-        const currentQ = QUESTIONS[this.state.questionIndex];
+        const currentQ: any = QUESTIONS[this.state.questionIndex];
+        const currentQcmAnswers = this.isQcmLikeQuestion(currentQ)
+            ? this.getQcmCorrectAnswers(currentQ)
+            : [];
+        const shouldHideAnswers =
+            this.state.status === 'question' ||
+            (this.isPerfectMatchQuestion(currentQ) && this.state.awaitingAdminAnswerSelection);
 
         // Create view for players (hide correct answers if active)
         const safeQ =
-            this.state.status === 'question' && currentQ
+            currentQ
                 ? {
                     ...currentQ,
-                    multiple: Array.isArray(currentQ.answers) && currentQ.answers.length > 1,
-                    answers: undefined // Hide answers during question phase
+                    ...(this.isQcmLikeQuestion(currentQ)
+                        ? { multiple: currentQcmAnswers.length > 1 }
+                        : {}),
+                    answers: shouldHideAnswers
+                        ? undefined
+                        : this.isQcmLikeQuestion(currentQ)
+                            ? currentQcmAnswers.length > 0
+                                ? currentQcmAnswers
+                                : undefined
+                            : currentQ.answers
                 }
                 : currentQ;
 
@@ -837,6 +934,7 @@ export default class QuizServer implements Party.Server {
                 id: string;
                 name: string;
                 score: number;
+                enabled: boolean;
                 connected: boolean;
                 lastSeen: number;
                 answered: boolean;
@@ -880,9 +978,12 @@ export default class QuizServer implements Party.Server {
             totalActualQuestions: QUESTIONS.filter(q => !this.isMediaQuestion(q)).length,
             totalQuestions: QUESTIONS.length,
             timer: this.state.timer,
+            serverNow: Date.now(),
+            questionStartedAt: this.state.questionStartedAt,
             players: playersSafe,
             // Don't send all answers to everyone, maybe just count
             answerCount: Object.keys(this.state.currentAnswers).length,
+            awaitingAdminAnswerSelection: this.state.awaitingAdminAnswerSelection,
             optionReveal: this.usesSeparateReveal(currentQ)
                 ? {
                     placedOptionIndexes: [...this.state.optionReveal.placedOptionIndexes],

@@ -1,4 +1,12 @@
 {
+    "teams":
+    {
+        "team1": "Team Eric",
+        "team2": "Team Fabienne",
+        "team3": "Team Enfants",
+        "team4": "Team Invités",
+        "team5": "Team Surprise"
+    },
 	"questionTypes": {
 		"media": "Media Interlude",
 		"qcm": "QCM",
@@ -163,7 +171,7 @@
 			"answers": [1, 2, 3]
 		},
 		{
-			"id": "deblur",
+			"id": "cocotier",
 			"type": "deblur",
 			"time": 25,
 			"question": "Kékifé sur la photo ?",
@@ -176,7 +184,7 @@
 			"answers": [4]
 		},
 		{
-			"id": "deblur",
+			"id": "pompes",
 			"type": "deblur",
 			"time": 25,
 			"question": "Kékifé sur la photo ?",

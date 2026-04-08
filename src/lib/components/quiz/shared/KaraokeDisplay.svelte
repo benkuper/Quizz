@@ -28,6 +28,8 @@
 	let playbackTime = $state(0);
 	let syncedPlaybackTime = $state(0);
 	let serverClockOffsetMs = $state(0);
+	let activeLyricsPath = $state('');
+	let activeQuestionId = $state('');
 
 	const karaoke = $derived(question.karaoke);
 	const title = $derived.by(() => karaoke.title?.trim() || lyrics?.title?.trim() || 'Karaoke');
@@ -109,35 +111,57 @@
 		return Math.max(0, (Date.now() + serverClockOffsetMs - questionStartedAt) / 1000);
 	}
 
+	function syncNodeToExpectedTime(node: HTMLAudioElement, toleranceSec: number) {
+		const expectedTimeSec = getExpectedPlaybackTimeSec();
+		if (Math.abs(node.currentTime - expectedTimeSec) <= toleranceSec) return;
+
+		try {
+			node.currentTime = expectedTimeSec;
+		} catch {
+			// ignore
+		}
+	}
+
+	function tryStartPlayback(node: HTMLAudioElement) {
+		if (status !== 'question' || audioMode === 'none') return;
+
+		if (hasSharedClock) {
+			syncNodeToExpectedTime(node, audioMode === 'audible' ? 0.35 : 0.12);
+		}
+
+		node.play().catch(() => {});
+	}
+
 	$effect(() => {
 		const lyricsPath = karaoke.lyrics?.trim();
 		if (!lyricsPath) {
+			activeLyricsPath = '';
 			lyrics = null;
+			loading = false;
 			error = 'No karaoke lyric file configured.';
 			return;
 		}
 
-		let cancelled = false;
+		if (lyricsPath === activeLyricsPath) return;
+
+		activeLyricsPath = lyricsPath;
 		loading = true;
 		error = '';
 
 		loadKaraokeLyrics(lyricsPath)
 			.then((data) => {
-				if (cancelled) return;
+				if (activeLyricsPath !== lyricsPath) return;
 				lyrics = data;
 			})
 			.catch((err) => {
-				if (cancelled) return;
+				if (activeLyricsPath !== lyricsPath) return;
+				activeLyricsPath = '';
 				lyrics = null;
 				error = err instanceof Error ? err.message : 'Failed to load karaoke lyrics.';
 			})
 			.finally(() => {
-				if (!cancelled) loading = false;
+				if (activeLyricsPath === lyricsPath || !activeLyricsPath) loading = false;
 			});
-
-		return () => {
-			cancelled = true;
-		};
 	});
 
 	$effect(() => {
@@ -147,7 +171,9 @@
 	});
 
 	$effect(() => {
-		const qid = question.id;
+		const qid = String(question.id ?? '');
+		if (!qid || qid === activeQuestionId) return;
+		activeQuestionId = qid;
 		playbackTime = 0;
 		syncedPlaybackTime = 0;
 		try {
@@ -156,9 +182,6 @@
 		} catch {
 			// ignore
 		}
-		return () => {
-			void qid;
-		};
 	});
 
 	$effect(() => {
@@ -189,14 +212,10 @@
 		}
 
 		if (hasSharedClock) {
-			try {
-				audioEl.currentTime = getExpectedPlaybackTimeSec();
-			} catch {
-				// ignore
-			}
+			syncNodeToExpectedTime(audioEl, audioMode === 'audible' ? 0.35 : 0.12);
 		}
 
-		audioEl.play().catch(() => {});
+		tryStartPlayback(audioEl);
 	});
 
 	$effect(() => {
@@ -236,17 +255,10 @@
 		const node = audioEl;
 		const toleranceSec = audioMode === 'audible' ? 0.2 : 0.08;
 		const syncAudio = () => {
-			const expectedTimeSec = getExpectedPlaybackTimeSec();
-			if (Math.abs(node.currentTime - expectedTimeSec) > toleranceSec) {
-				try {
-					node.currentTime = expectedTimeSec;
-				} catch {
-					// ignore
-				}
-			}
+			syncNodeToExpectedTime(node, toleranceSec);
 
 			if (node.paused) {
-				node.play().catch(() => {});
+				tryStartPlayback(node);
 			}
 		};
 
@@ -269,9 +281,11 @@
 		<audio
 			bind:this={audioEl}
 			src={getMedia(karaoke.audio)}
+			autoplay
 			preload="auto"
 			playsinline
 			muted={audioMode !== 'audible'}
+			oncanplay={() => audioEl && tryStartPlayback(audioEl)}
 			onended={notifyFinished}
 		></audio>
 	{/if}

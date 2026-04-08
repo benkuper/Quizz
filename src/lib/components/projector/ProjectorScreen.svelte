@@ -60,6 +60,7 @@
 			<ProjectorQuestionRenderer
 				status={gameState.status}
 				question={gameState.question}
+				timer={gameState.timer}
 				karaokeSync={{
 					serverNow: gameState.serverNow ?? null,
 					questionStartedAt: gameState.questionStartedAt ?? null

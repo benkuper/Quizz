@@ -1,12 +1,19 @@
 <script lang="ts">
 	import RevealableOptions from './RevealableOptions.svelte';
-	import type { GameStatus, OptionRevealState, QuizOptionAnswer, QuizQuestionQcm } from '$lib/quiz/types';
+	import type {
+		GameStatus,
+		OptionRevealState,
+		QuizOptionAnswer,
+		QuizQuestionDeblur,
+		QuizQuestionPerfectMatch,
+		QuizQuestionQcm
+	} from '$lib/quiz/types';
 
 	const OPTION_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 	type Props = {
 		status: GameStatus;
-		question: QuizQuestionQcm;
+		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
 		optionReveal?: OptionRevealState;
 	};
 
@@ -61,8 +68,9 @@
 	<div class="options">
 		{#if question.options}
 			{#each question.options as opt, index}
+				{@const hasReviewAnswers = correctAnswerIndexes.length > 0}
 				<div
-					class="option {status === 'review'
+					class="option {status === 'review' && hasReviewAnswers
 						? 'review-' + (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong')
 						: ''}"
 				>

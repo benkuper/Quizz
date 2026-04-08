@@ -2,12 +2,17 @@
 	import type PartySocket from 'partysocket';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { getTeamBadgeUrl } from '$lib/quiz/teamAssets';
+	import {
+		isPerfectMatchQuestionType,
+		isQcmLikeQuestionType
+	} from '$lib/quiz/questionTypes';
 
 	let socket: PartySocket | null = null;
 	let gameState = $state(null as any);
 	let questions: Array<{
 		index: number;
 		questionIndex?: number | null;
+		mediaIndex?: number | null;
 		passiveIndex?: number | null;
 		id?: string;
 		question?: string;
@@ -48,6 +53,10 @@
 
 	function focusOption(index: number) {
 		socket?.send(JSON.stringify({ type: 'admin_focus_option', index }));
+	}
+
+	function selectPerfectMatchAnswer(index: number) {
+		socket?.send(JSON.stringify({ type: 'admin_set_correct_answer', index }));
 	}
 
 	function finishRoundNow() {
@@ -147,7 +156,7 @@
 	});
 
 	const btnBase =
-		'inline-flex items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40';
+		'inline-flex items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/40 disabled:cursor-not-allowed disabled:opacity-50';
 	const btnPrimary = `${btnBase} bg-indigo-500/15 text-indigo-100 ring-indigo-400/20 hover:bg-indigo-500/20`;
 	const btnDanger = `${btnBase} bg-rose-500/15 text-rose-100 ring-rose-400/20 hover:bg-rose-500/20`;
 	const btnNeutral = `${btnBase} bg-white/5 text-slate-100 ring-white/10 hover:bg-white/10`;
@@ -161,6 +170,45 @@
 		const total = optionReveal?.totalOptions ?? 0;
 		return total > 0 && placed.length >= total;
 	});
+	const awaitingAdminAnswerSelection = $derived(
+		Boolean(gameState?.awaitingAdminAnswerSelection)
+	);
+	const currentQuestionAnswerIndexes = $derived.by(() => {
+		const options = currentQuestionOptions;
+		const answers: unknown[] = Array.isArray(gameState?.question?.answers)
+			? gameState.question.answers
+			: [];
+
+		return [...new Set(
+			answers
+				.map((answer: unknown) => {
+					if (typeof answer === 'number' && Number.isInteger(answer)) {
+						return answer >= 1 && answer <= options.length ? answer : null;
+					}
+
+					if (typeof answer !== 'string') return null;
+					const trimmed = answer.trim();
+					if (!trimmed) return null;
+
+					const numericValue = Number(trimmed);
+					if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= options.length) {
+						return numericValue;
+					}
+
+					const labelIndex = optionLabels.indexOf(trimmed.toUpperCase());
+					if (trimmed.length === 1 && labelIndex >= 0 && labelIndex < options.length) {
+						return labelIndex + 1;
+					}
+
+					const optionIndex = options.findIndex((option: string) => option === trimmed);
+					return optionIndex >= 0 ? optionIndex + 1 : null;
+				})
+				.filter((answer: number | null): answer is number => answer !== null)
+		)];
+	});
+	const nextButtonDisabled = $derived(
+		gameState?.status === 'review' && awaitingAdminAnswerSelection
+	);
 	const nextButtonLabel = $derived.by(() => {
 		if (gameState?.status === 'reading') {
 			return gameState?.question?.separateReveal ? 'Start reveal' : 'Launch';
@@ -170,11 +218,14 @@
 			if (!allRevealOptionsPlaced) return 'Show option';
 			return 'Start countdown';
 		}
+		if (gameState?.status === 'review' && awaitingAdminAnswerSelection) {
+			return 'Choose answer';
+		}
 		return 'Next';
 	});
 
 	function optionAdminLabel(index: number) {
-		if (String(gameState?.question?.type ?? '') === 'qcm') {
+		if (isQcmLikeQuestionType(gameState?.question?.type)) {
 			return optionLabels[index] ?? String(index + 1);
 		}
 		return String(index + 1);
@@ -207,7 +258,7 @@
 						<span class="hidden sm:inline">Start</span>
 					</button>
 				{:else if gameState?.status === 'review' || gameState?.status === 'question' || gameState?.status === 'reading' || gameState?.status === 'reveal'}
-					<button class={btnPrimary} onclick={nextQuestion} title="Next question / phase">
+					<button class={btnPrimary} onclick={nextQuestion} title="Next question / phase" disabled={nextButtonDisabled}>
 						<svg
 							viewBox="0 0 24 24"
 							class="h-4 w-4"
@@ -323,6 +374,23 @@
 						title={opt}
 					>
 						Focus {optionAdminLabel(index)}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
+		{#if gameState?.status === 'review' && isPerfectMatchQuestionType(gameState?.question?.type) && currentQuestionOptions.length > 0}
+			<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+				<span class="text-slate-400">
+					{awaitingAdminAnswerSelection ? 'Choose correct answer:' : 'Correct answer:'}
+				</span>
+				{#each currentQuestionOptions as opt, index}
+					<button
+						onclick={() => selectPerfectMatchAnswer(index)}
+						class={currentQuestionAnswerIndexes.includes(index + 1) ? btnPrimary : btnNeutral}
+						title={opt}
+					>
+						{optionAdminLabel(index)}
 					</button>
 				{/each}
 			</div>

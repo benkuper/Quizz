@@ -1,14 +1,16 @@
 <script lang="ts">
-	import type { GameStatus, QuizOptionAnswer, QuizQuestionQcm } from '$lib/quiz/types';
+	import RevealableOptions from './RevealableOptions.svelte';
+	import type { GameStatus, OptionRevealState, QuizOptionAnswer, QuizQuestionQcm } from '$lib/quiz/types';
 
 	const OPTION_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 	type Props = {
 		status: GameStatus;
 		question: QuizQuestionQcm;
+		optionReveal?: OptionRevealState;
 	};
 
-	let { status, question }: Props = $props();
+	let { status, question, optionReveal }: Props = $props();
 
 	function optionLabel(index: number) {
 		return OPTION_LABELS[index] ?? String(index + 1);
@@ -42,22 +44,35 @@
 		const answers = Array.isArray(question.answers) ? question.answers : [];
 		return [...new Set(answers.map((answer) => toOptionIndex(answer)).filter((answer): answer is number => answer !== null))];
 	});
+
+	const optionLabels = $derived.by(() => question.options.map((_, index) => optionLabel(index)));
+	const showRevealLayout = $derived.by(() => {
+		if (status !== 'reveal' || !optionReveal) return false;
+		return (
+			optionReveal.focusedOptionIndex !== null ||
+			optionReveal.placedOptionIndexes.length < optionReveal.totalOptions
+		);
+	});
 </script>
 
-<div class="options">
-	{#if question.options}
-		{#each question.options as opt, index}
-			<div
-				class="option {status == 'review'
-					? 'review-' + (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong')
-					: ''}"
-			>
-				<span class="option-label">{optionLabel(index)}</span>
-				<span class="option-text">{opt}</span>
-			</div>
-		{/each}
-	{/if}
-</div>
+{#if showRevealLayout && question.options}
+	<RevealableOptions options={question.options} reveal={optionReveal!} labels={optionLabels} showLabels />
+{:else}
+	<div class="options">
+		{#if question.options}
+			{#each question.options as opt, index}
+				<div
+					class="option {status === 'review'
+						? 'review-' + (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong')
+						: ''}"
+				>
+					<span class="option-label">{optionLabel(index)}</span>
+					<span class="option-text">{opt}</span>
+				</div>
+			{/each}
+		{/if}
+	</div>
+{/if}
 
 <!-- {#if status === 'review' && question.answers}
 	<div class="correct-answer">
@@ -69,8 +84,7 @@
 {/if} -->
 
 <style>
-	.option
-	{
+	.option {
 		transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 		display: flex;
 		align-items: center;

@@ -732,16 +732,20 @@
 						{/if}
 					</section>
 				{/if}
-			{:else if gameState.status === 'review'}
+			{:else if gameState.status === 'reveal' || gameState.status === 'review'}
 				<section
 					class="rounded-2xl p-5 text-center"
-					class:bg-emerald-900={reviewFeedback === 'perfect'}
-					class:bg-amber-900={reviewFeedback === 'partial'}
-					class:bg-rose-900={reviewFeedback === 'wrong'}
-					class:bg-slate-900={reviewFeedback === 'none'}
+					class:bg-emerald-900={gameState.status === 'review' && reviewFeedback === 'perfect'}
+					class:bg-amber-900={gameState.status === 'review' && reviewFeedback === 'partial'}
+					class:bg-rose-900={gameState.status === 'review' && reviewFeedback === 'wrong'}
+					class:bg-slate-900={gameState.status === 'reveal' || reviewFeedback === 'none'}
 					in:fade
 				>
-					{#if reviewFeedback === 'perfect'}
+					{#if gameState.status === 'reveal'}
+						<div class="text-4xl">🎞️</div>
+						<h2 class="mt-2 text-2xl font-extrabold">Answer reveal</h2>
+						<p class="mt-1 text-sm text-slate-300">Look at the projector while the options are shown one by one.</p>
+					{:else if reviewFeedback === 'perfect'}
 						<div class="text-4xl">✅</div>
 						<h2 class="mt-2 text-2xl font-extrabold">Perfect</h2>
 						<p class="mt-1 text-sm text-emerald-100">Max points!</p>
@@ -759,7 +763,7 @@
 						<p class="mt-1 text-sm text-slate-300">Look at the projector for the answer.</p>
 					{/if}
 
-					{#if myLastPoints !== null}
+					{#if gameState.status === 'review' && myLastPoints !== null}
 						<div class="mt-4 text-sm text-slate-100">
 							Points this round:
 							<span class="font-semibold">{myLastPoints}</span>

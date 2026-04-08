@@ -141,6 +141,12 @@
 				}
 				break;
 
+			case 'reveal':
+				sign1Text = 'REPONSES';
+				sign2Text = 'UNE';
+				sign3Text = 'PAR UNE';
+				break;
+
 			case 'review':
 				{
 					let best3Players = sortedPlayers.slice(0, 3);

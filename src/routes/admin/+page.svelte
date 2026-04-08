@@ -46,6 +46,10 @@
 		socket?.send(JSON.stringify({ type: 'admin_next' }));
 	}
 
+	function focusOption(index: number) {
+		socket?.send(JSON.stringify({ type: 'admin_focus_option', index }));
+	}
+
 	function finishRoundNow() {
 		socket?.send(JSON.stringify({ type: 'admin_finish_round' }));
 	}
@@ -111,6 +115,8 @@
 				return 'bg-slate-500/15 text-slate-200 ring-slate-400/20';
 			case 'question':
 				return 'bg-indigo-500/15 text-indigo-100 ring-indigo-400/20';
+			case 'reveal':
+				return 'bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-400/20';
 			case 'review':
 				return 'bg-amber-500/15 text-amber-100 ring-amber-400/20';
 			case 'finished':
@@ -145,6 +151,34 @@
 	const btnPrimary = `${btnBase} bg-indigo-500/15 text-indigo-100 ring-indigo-400/20 hover:bg-indigo-500/20`;
 	const btnDanger = `${btnBase} bg-rose-500/15 text-rose-100 ring-rose-400/20 hover:bg-rose-500/20`;
 	const btnNeutral = `${btnBase} bg-white/5 text-slate-100 ring-white/10 hover:bg-white/10`;
+	const optionLabels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	const currentQuestionOptions = $derived.by(() =>
+		Array.isArray(gameState?.question?.options) ? gameState.question.options.map(String) : []
+	);
+	const optionReveal = $derived.by(() => gameState?.optionReveal ?? null);
+	const allRevealOptionsPlaced = $derived.by(() => {
+		const placed = optionReveal?.placedOptionIndexes ?? [];
+		const total = optionReveal?.totalOptions ?? 0;
+		return total > 0 && placed.length >= total;
+	});
+	const nextButtonLabel = $derived.by(() => {
+		if (gameState?.status === 'reading') {
+			return gameState?.question?.separateReveal ? 'Start reveal' : 'Launch';
+		}
+		if (gameState?.status === 'reveal') {
+			if (optionReveal?.focusedOptionIndex !== null) return 'Place';
+			if (!allRevealOptionsPlaced) return 'Show option';
+			return 'Start countdown';
+		}
+		return 'Next';
+	});
+
+	function optionAdminLabel(index: number) {
+		if (String(gameState?.question?.type ?? '') === 'qcm') {
+			return optionLabels[index] ?? String(index + 1);
+		}
+		return String(index + 1);
+	}
 </script>
 
 <div class="min-h-screen w-full">
@@ -166,18 +200,20 @@
 						</svg>
 						<span class="hidden sm:inline">Start</span>
 					</button>
-				{:else if gameState?.status === 'review' || gameState?.status === 'question' || gameState?.status === 'reading'}
+				{:else if gameState?.status === 'review' || gameState?.status === 'question' || gameState?.status === 'reading' || gameState?.status === 'reveal'}
 					<button class={btnPrimary} onclick={nextQuestion} title="Next question / phase">
 						<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
 							{#if gameState.status === 'reading'}
 								<circle cx="12" cy="12" r="10" />
 								<polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
+							{:else if gameState.status === 'reveal' && optionReveal?.focusedOptionIndex !== null}
+								<path d="M6 6h12v12H6z" />
 							{:else}
 								<path d="M13 5l7 7-7 7" />
 								<path d="M4 12h16" />
 							{/if}
 						</svg>
-						<span class="hidden sm:inline">{gameState.status === 'reading' ? 'Launch' : 'Next'}</span>
+						<span class="hidden sm:inline">{nextButtonLabel}</span>
 					</button>
 					{#if gameState?.status === 'question'}
 						<button class={btnDanger} onclick={finishRoundNow} title="Finish round now">
@@ -234,6 +270,22 @@
 				<span title="Answers"><span class="text-slate-400">Answers:</span> {gameState?.answerCount ?? 0}</span>
 			</div>
 		</div>
+
+		{#if gameState?.status === 'reveal' && currentQuestionOptions.length > 0 && optionReveal}
+			<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
+				<span class="text-slate-400">Reveal: {optionReveal.placedOptionIndexes.length}/{optionReveal.totalOptions}</span>
+				{#each currentQuestionOptions as opt, index}
+					<button
+						onclick={() => focusOption(index)}
+						disabled={!optionReveal.placedOptionIndexes.includes(index)}
+						class={optionReveal.focusedOptionIndex === index ? btnPrimary : btnNeutral}
+						title={opt}
+					>
+						Focus {optionAdminLabel(index)}
+					</button>
+				{/each}
+			</div>
+		{/if}
 	</header>
 
 	<main class="px-4 py-4">

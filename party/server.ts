@@ -12,12 +12,18 @@ type Player = {
     lastSeen: number; // epoch ms
 };
 
-type GameStatus = 'lobby' | 'reading' | 'question' | 'review' | 'leaderboard' | 'finished';
+type GameStatus = 'lobby' | 'reading' | 'question' | 'reveal' | 'review' | 'leaderboard' | 'finished';
+
+type OptionRevealState = {
+    placedOptionIndexes: number[];
+    focusedOptionIndex: number | null;
+};
 
 type GameState = {
     status: GameStatus;
     questionIndex: number;
     timer: number;
+    optionReveal: OptionRevealState;
     players: Record<string, Player>;
     lastRoundSummary?: {
         estimate?: {
@@ -71,6 +77,10 @@ export default class QuizServer implements Party.Server {
         status: 'lobby',
         questionIndex: -1,
         timer: 0,
+        optionReveal: {
+            placedOptionIndexes: [],
+            focusedOptionIndex: null
+        },
         players: createInitialPlayers(),
         lastRoundSummary: undefined,
         lastRoundResults: {},
@@ -156,6 +166,82 @@ export default class QuizServer implements Party.Server {
 
     private isMediaQuestion(q: any) {
         return q && String(q.type || '') === 'media';
+    }
+
+    private getQuestionOptionCount(q: any) {
+        return Array.isArray(q?.options) ? q.options.length : 0;
+    }
+
+    private usesSeparateReveal(q: any) {
+        return Boolean(q?.separateReveal) && this.getQuestionOptionCount(q) > 0;
+    }
+
+    private resetOptionReveal() {
+        this.state.optionReveal = {
+            placedOptionIndexes: [],
+            focusedOptionIndex: null
+        };
+    }
+
+    private getNextUnplacedOptionIndex(q: any) {
+        const total = this.getQuestionOptionCount(q);
+        for (let index = 0; index < total; index++) {
+            if (!this.state.optionReveal.placedOptionIndexes.includes(index)) {
+                return index;
+            }
+        }
+        return null;
+    }
+
+    private allOptionsPlaced(q: any) {
+        const total = this.getQuestionOptionCount(q);
+        return total > 0 && this.state.optionReveal.placedOptionIndexes.length >= total;
+    }
+
+    private startRevealStage() {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        if (!this.usesSeparateReveal(currentQ)) {
+            this.launchQuestion();
+            return;
+        }
+
+        this.state.status = 'reveal';
+        this.state.optionReveal = {
+            placedOptionIndexes: [],
+            focusedOptionIndex: this.getNextUnplacedOptionIndex(currentQ)
+        };
+        this.broadcastState();
+    }
+
+    private revealNextOption() {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        if (this.state.status !== 'reveal' || !this.usesSeparateReveal(currentQ)) return;
+        this.state.optionReveal.focusedOptionIndex = this.getNextUnplacedOptionIndex(currentQ);
+        this.broadcastState();
+    }
+
+    private placeFocusedOption() {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        const focusedOptionIndex = this.state.optionReveal.focusedOptionIndex;
+        if (this.state.status !== 'reveal' || !this.usesSeparateReveal(currentQ) || focusedOptionIndex === null) {
+            return;
+        }
+
+        if (!this.state.optionReveal.placedOptionIndexes.includes(focusedOptionIndex)) {
+            this.state.optionReveal.placedOptionIndexes = [...this.state.optionReveal.placedOptionIndexes, focusedOptionIndex]
+                .sort((a, b) => a - b);
+        }
+
+        this.state.optionReveal.focusedOptionIndex = null;
+        this.broadcastState();
+    }
+
+    private focusPlacedOption(index: number) {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        if (this.state.status !== 'reveal' || !this.usesSeparateReveal(currentQ)) return;
+        if (!this.state.optionReveal.placedOptionIndexes.includes(index)) return;
+        this.state.optionReveal.focusedOptionIndex = index;
+        this.broadcastState();
     }
 
     onClose(conn: Party.Connection) {
@@ -276,6 +362,12 @@ export default class QuizServer implements Party.Server {
             this.jumpToQuestion(index);
         }
 
+        if (event.type === 'admin_focus_option') {
+            const index = Number(event.index);
+            if (!Number.isInteger(index) || index < 0) return;
+            this.focusPlacedOption(index);
+        }
+
         if (event.type === 'admin_finish_round') {
             if (this.state.status !== 'question') return;
             const q = QUESTIONS[this.state.questionIndex];
@@ -288,7 +380,12 @@ export default class QuizServer implements Party.Server {
 
         if (event.type === 'admin_next') {
             if (this.state.status === 'reading') {
-                this.launchQuestion();
+                const q = QUESTIONS[this.state.questionIndex];
+                if (this.usesSeparateReveal(q)) {
+                    this.startRevealStage();
+                } else {
+                    this.launchQuestion();
+                }
                 return;
             }
 
@@ -298,7 +395,18 @@ export default class QuizServer implements Party.Server {
                 if (this.isMediaQuestion(q)) {
                     this.nextQuestion();
                 } else {
-                    this.endRound();
+                    this.finishRoundNow();
+                }
+            } else if (this.state.status === 'reveal') {
+                const q = QUESTIONS[this.state.questionIndex];
+                if (!this.usesSeparateReveal(q)) {
+                    this.launchQuestion();
+                } else if (this.state.optionReveal.focusedOptionIndex !== null) {
+                    this.placeFocusedOption();
+                } else if (!this.allOptionsPlaced(q)) {
+                    this.revealNextOption();
+                } else {
+                    this.launchQuestion();
                 }
             } else {
                 this.nextQuestion();
@@ -377,6 +485,7 @@ export default class QuizServer implements Party.Server {
         this.state.status = 'lobby';
         this.state.questionIndex = -1;
         this.state.timer = 0;
+        this.resetOptionReveal();
         this.state.currentAnswers = {};
         this.state.lastRoundResults = {};
         this.state.lastRoundSummary = undefined;
@@ -387,6 +496,7 @@ export default class QuizServer implements Party.Server {
     private jumpToQuestion(index: number) {
         const clamped = Math.max(0, Math.min(QUESTIONS.length - 1, Math.floor(index)));
         this.state.questionIndex = clamped;
+        this.resetOptionReveal();
         this.state.currentAnswers = {};
         this.state.lastRoundResults = {};
 
@@ -426,6 +536,7 @@ export default class QuizServer implements Party.Server {
         // If we were in review, go to next question
         if (this.state.questionIndex < QUESTIONS.length - 1) {
             this.state.questionIndex++;
+            this.resetOptionReveal();
             this.state.currentAnswers = {};
             this.state.lastRoundResults = {};
             
@@ -449,6 +560,7 @@ export default class QuizServer implements Party.Server {
 
     launchQuestion() {
         this.state.status = 'question';
+        this.resetOptionReveal();
         const currentQ: any = QUESTIONS[this.state.questionIndex];
 
         if (this.isMediaQuestion(currentQ)) {
@@ -492,6 +604,7 @@ export default class QuizServer implements Party.Server {
 
     endRound() {
         this.state.status = 'review';
+        this.state.optionReveal.focusedOptionIndex = null;
         this.calculateScores();
         this.broadcastState();
     }
@@ -770,6 +883,13 @@ export default class QuizServer implements Party.Server {
             players: playersSafe,
             // Don't send all answers to everyone, maybe just count
             answerCount: Object.keys(this.state.currentAnswers).length,
+            optionReveal: this.usesSeparateReveal(currentQ)
+                ? {
+                    placedOptionIndexes: [...this.state.optionReveal.placedOptionIndexes],
+                    focusedOptionIndex: this.state.optionReveal.focusedOptionIndex,
+                    totalOptions: this.getQuestionOptionCount(currentQ)
+                }
+                : undefined,
             // Review-only summary used by projector to show clustered guesses
             roundSummary: this.state.status === 'review' ? this.state.lastRoundSummary : undefined
         };

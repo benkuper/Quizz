@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { GameStatus, QuizQuestion } from '$lib/quiz/types';
+	import type { GameStatus, OptionRevealState, QuizQuestion } from '$lib/quiz/types';
 	import QcmView from './types/QcmView.svelte';
 	import SortingView from './types/SortingView.svelte';
 	import EstimateView from './types/EstimateView.svelte';
@@ -11,11 +11,12 @@
 	type Props = {
 		status: GameStatus;
 		question: QuizQuestion | undefined;
+		optionReveal?: OptionRevealState;
 		roundSummary?: any;
 		onMediaFinished?: () => void;
 	};
 
-	let { status, question, roundSummary, onMediaFinished }: Props = $props();
+	let { status, question, optionReveal, roundSummary, onMediaFinished }: Props = $props();
 	const type = $derived(String(question?.type || ''));
 
 	function text(q: QuizQuestion) {
@@ -31,10 +32,12 @@
 			<h2 class="q-text">{text(question)}</h2>
 			<QuestionImageStrip questionId={question.id} />
 		{/if}
-		{#if type === 'qcm'}
-			<QcmView {status} question={question as any} />
+		{#if status === 'reading'}
+			<div class="reading-spacer"></div>
+		{:else if type === 'qcm'}
+			<QcmView {status} question={question as any} {optionReveal} />
 		{:else if type === 'sorting'}
-			<SortingView {status} question={question as any} />
+			<SortingView {status} question={question as any} {optionReveal} />
 		{:else if type === 'estimate'}
 			<EstimateView {status} question={question as any} summary={roundSummary?.estimate} />
 		{:else if type === 'fastFingers'}
@@ -67,6 +70,11 @@
 	.q-text {
 		margin-top: 1rem;
 		text-align: center;
+		max-width: 88%;
+	}
+
+	.reading-spacer {
+		height: 1rem;
 	}
 
 	:global {

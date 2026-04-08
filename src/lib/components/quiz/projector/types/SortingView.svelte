@@ -1,21 +1,34 @@
 <script lang="ts">
-	import type { GameStatus, QuizQuestionSorting } from '$lib/quiz/types';
+	import RevealableOptions from './RevealableOptions.svelte';
+	import type { GameStatus, OptionRevealState, QuizQuestionSorting } from '$lib/quiz/types';
 
 	type Props = {
 		status: GameStatus;
 		question: QuizQuestionSorting;
+		optionReveal?: OptionRevealState;
 	};
 
-	let { status, question }: Props = $props();
+	let { status, question, optionReveal }: Props = $props();
+	const showRevealLayout = $derived.by(() => {
+		if (status !== 'reveal' || !optionReveal) return false;
+		return (
+			optionReveal.focusedOptionIndex !== null ||
+			optionReveal.placedOptionIndexes.length < optionReveal.totalOptions
+		);
+	});
 </script>
 
-<div class="options">
-	{#if question.options}
-		{#each question.options as opt}
-			<div class="option">{opt}</div>
-		{/each}
-	{/if}
-</div>
+{#if showRevealLayout && question.options}
+	<RevealableOptions options={question.options.map(String)} reveal={optionReveal!} />
+{:else}
+	<div class="options">
+		{#if question.options}
+			{#each question.options as opt}
+				<div class="option">{opt}</div>
+			{/each}
+		{/if}
+	</div>
+{/if}
 
 {#if status === 'review' && question.answers}
 	<div class="correct-answer">

@@ -27,13 +27,6 @@ export type QuizQuestionQcm = QuizQuestionBase & {
 	answers?: QuizOptionAnswer[];
 };
 
-export type QuizQuestionDeblur = QuizQuestionBase & {
-	type: 'deblur';
-	options: string[];
-	multiple?: boolean;
-	answers?: QuizOptionAnswer[];
-};
-
 export type QuizQuestionPerfectMatch = QuizQuestionBase & {
 	type: 'perfectmatch';
 	options: string[];
@@ -151,7 +144,6 @@ export type KaraokePlaybackSync = {
 
 export type QuizQuestion =
 	| QuizQuestionQcm
-	| QuizQuestionDeblur
 	| QuizQuestionPerfectMatch
 	| QuizQuestionSorting
 	| QuizQuestionEstimate

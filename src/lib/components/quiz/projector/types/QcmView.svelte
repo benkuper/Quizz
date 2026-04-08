@@ -1,10 +1,10 @@
 <script lang="ts">
 	import RevealableOptions from './RevealableOptions.svelte';
+	import { loadQuestionOptionImages } from '$lib/quiz/optionImages.svelte';
 	import type {
 		GameStatus,
 		OptionRevealState,
 		QuizOptionAnswer,
-		QuizQuestionDeblur,
 		QuizQuestionPerfectMatch,
 		QuizQuestionQcm
 	} from '$lib/quiz/types';
@@ -13,15 +13,32 @@
 
 	type Props = {
 		status: GameStatus;
-		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
+		question: QuizQuestionQcm | QuizQuestionPerfectMatch;
 		optionReveal?: OptionRevealState;
 	};
 
 	let { status, question, optionReveal }: Props = $props();
+	let optionImages = $state<Array<string | null>>([]);
 
 	function optionLabel(index: number) {
 		return OPTION_LABELS[index] ?? String(index + 1);
 	}
+
+	$effect(() => {
+		let cancelled = false;
+
+		optionImages = [];
+		if (question.type !== 'qcm') return;
+
+		(async () => {
+			const nextImages = await loadQuestionOptionImages(question.id, question.options?.length ?? 0);
+			if (!cancelled) optionImages = nextImages;
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	function toOptionIndex(raw: QuizOptionAnswer | null | undefined) {
 		if (typeof raw === 'number' && Number.isInteger(raw)) {
@@ -53,6 +70,7 @@
 	});
 
 	const optionLabels = $derived.by(() => question.options.map((_, index) => optionLabel(index)));
+	const hasOptionImages = $derived.by(() => optionImages.some((src) => Boolean(src)));
 	const showRevealLayout = $derived.by(() => {
 		if (status !== 'reveal' || !optionReveal) return false;
 		return (
@@ -63,19 +81,34 @@
 </script>
 
 {#if showRevealLayout && question.options}
-	<RevealableOptions options={question.options} reveal={optionReveal!} labels={optionLabels} showLabels />
+	<RevealableOptions
+		options={question.options}
+		reveal={optionReveal!}
+		labels={optionLabels}
+		optionImages={optionImages}
+		showLabels
+	/>
 {:else}
 	<div class="options">
 		{#if question.options}
 			{#each question.options as opt, index}
 				{@const hasReviewAnswers = correctAnswerIndexes.length > 0}
+				{@const imageSrc = optionImages[index]}
 				<div
 					class="option {status === 'review' && hasReviewAnswers
 						? 'review-' + (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong')
 						: ''}"
+					class:has-image={Boolean(imageSrc)}
 				>
 					<span class="option-label">{optionLabel(index)}</span>
-					<span class="option-text">{opt}</span>
+					<div class="option-body" class:has-image={Boolean(imageSrc)}>
+						{#if imageSrc}
+							<div class="option-image-shell">
+								<img class="option-image" src={imageSrc} alt={opt} />
+							</div>
+						{/if}
+						<span class="option-text">{opt}</span>
+					</div>
 				</div>
 			{/each}
 		{/if}
@@ -99,6 +132,10 @@
 		gap: 1rem;
 	}
 
+	.option.has-image {
+		align-items: stretch;
+	}
+
 	.option-label {
 		display: inline-flex;
 		align-items: center;
@@ -116,6 +153,35 @@
 		flex: 1;
 	}
 
+	.option-body {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.option-body.has-image {
+		align-items: stretch;
+	}
+
+	.option-image-shell {
+		width: min(20vw, 12rem);
+		height: 7rem;
+		flex-shrink: 0;
+		border-radius: 1rem;
+		overflow: hidden;
+		background: rgba(15, 23, 42, 0.92);
+		border: 0.1rem solid rgba(255, 255, 255, 0.12);
+	}
+
+	.option-image {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
 	.option.review-correct {
 		background-color: #166534;
 		border-color: #22c55e;
@@ -126,5 +192,23 @@
 		background-color: #7f1d1d;
 		border-color: #ef4444;
 		color: white;
+	}
+
+	@media (max-width: 60rem) {
+		.option,
+		.option-body.has-image {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.option-label {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		.option-image-shell {
+			width: 100%;
+			height: 10rem;
+		}
 	}
 </style>

@@ -5,10 +5,11 @@
 		options: string[];
 		reveal: OptionRevealState;
 		labels?: string[];
+		optionImages?: Array<string | null>;
 		showLabels?: boolean;
 	};
 
-	let { options, reveal, labels = [], showLabels = false }: Props = $props();
+	let { options, reveal, labels = [], optionImages = [], showLabels = false }: Props = $props();
 
 	let landingOptionIndexes = $state<number[]>([]);
 	let fadingFocusOptionIndex = $state<number | null>(null);
@@ -22,6 +23,10 @@
 
 	function optionLabel(index: number) {
 		return labels[index] ?? String(index + 1);
+	}
+
+	function optionImage(index: number) {
+		return optionImages[index] ?? null;
 	}
 
 	$effect(() => {
@@ -61,18 +66,27 @@
 		{#each options as option, index}
 			<div
 				class="option reveal-slot"
+				class:has-image={Boolean(optionImage(index))}
 				class:is-placed={placedLookup.has(index)}
 				class:is-landing={landingOptionIndexes.includes(index)}
 			>
 				<div
 					class="slot-content"
+					class:has-image={Boolean(optionImage(index))}
 					class:is-hidden={!placedLookup.has(index) || focusedOptionIndex === index || landingOptionIndexes.includes(index)}
 					class:is-fading-in={landingOptionIndexes.includes(index)}
 				>
 					{#if showLabels}
 						<span class="option-label">{optionLabel(index)}</span>
 					{/if}
-					<span class="option-text">{option}</span>
+					<div class="option-body" class:has-image={Boolean(optionImage(index))}>
+						{#if optionImage(index)}
+							<div class="option-image-shell">
+								<img class="option-image" src={optionImage(index)!} alt={option} />
+							</div>
+						{/if}
+						<span class="option-text">{option}</span>
+					</div>
 				</div>
 
 				{#if !placedLookup.has(index) || focusedOptionIndex === index}
@@ -86,11 +100,29 @@
 
 	{#if focusedOptionIndex !== null || fadingFocusOptionIndex !== null}
 		<div class="focus-stage">
-			<div class="option focus-card" class:is-fading-out={focusedOptionIndex === null && fadingFocusOptionIndex !== null}>
+			<div
+				class="option focus-card"
+				class:has-image={Boolean(optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!))}
+				class:is-fading-out={focusedOptionIndex === null && fadingFocusOptionIndex !== null}
+			>
 				{#if showLabels}
 					<span class="option-label">{optionLabel(focusedOptionIndex ?? fadingFocusOptionIndex!)}</span>
 				{/if}
-				<span class="option-text">{options[focusedOptionIndex ?? fadingFocusOptionIndex!]}</span>
+				<div
+					class="option-body"
+					class:has-image={Boolean(optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!))}
+				>
+					{#if optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!)}
+						<div class="option-image-shell focus-image-shell">
+							<img
+								class="option-image focus-image"
+								src={optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!)!}
+								alt={options[focusedOptionIndex ?? fadingFocusOptionIndex!]}
+							/>
+						</div>
+					{/if}
+					<span class="option-text">{options[focusedOptionIndex ?? fadingFocusOptionIndex!]}</span>
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -121,6 +153,35 @@
 		align-items: center;
 		gap: 1rem;
 		width: 100%;
+	}
+
+	.option-body {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.option-body.has-image {
+		align-items: stretch;
+	}
+
+	.option-image-shell {
+		width: min(18vw, 10rem);
+		height: 6.5rem;
+		flex-shrink: 0;
+		border-radius: 1rem;
+		overflow: hidden;
+		background: rgba(15, 23, 42, 0.92);
+		border: 0.1rem solid rgba(255, 255, 255, 0.12);
+	}
+
+	.option-image {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
 	}
 
 	.slot-content.is-hidden {
@@ -185,6 +246,25 @@
 		animation: focus-enter 0.28s ease-out;
 	}
 
+	.focus-card.has-image {
+		padding-block: 1.5rem 1.75rem;
+	}
+
+	.focus-card .option-body.has-image {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.focus-image-shell {
+		width: min(100%, 26rem);
+		height: 14rem;
+	}
+
+	.focus-image {
+		background: rgba(15, 23, 42, 0.92);
+	}
+
 	.focus-card.is-fading-out {
 		animation: focus-exit 0.28s ease-in forwards;
 	}
@@ -222,6 +302,23 @@
 		.focus-card,
 		.slot-content.is-fading-in {
 			animation: none;
+		}
+	}
+
+	@media (max-width: 60rem) {
+		.slot-content.has-image,
+		.option-body.has-image {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.option-image-shell {
+			width: 100%;
+			height: 9rem;
+		}
+
+		.focus-card {
+			width: min(88%, 36rem);
 		}
 	}
 </style>

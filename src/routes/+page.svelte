@@ -80,10 +80,6 @@
 		});
 	}
 
-	// Fullscreen (best-effort): supported on most Android/desktop browsers.
-	let canFullscreen = $state(false);
-	let isFullscreen = $state(false);
-
 	// Answer state
 	let answer: unknown = $state(null);
 	let hasSubmitted: boolean = $state(false);
@@ -150,6 +146,11 @@
 		const count = Array.isArray(options) ? options.length : 0;
 		return count > 0 && count <= 4;
 	});
+	const immersivePhoneShell = $derived(
+		joined &&
+		(gameState?.status === 'question' || gameState?.status === 'reading') &&
+		qcmUsesPhoneShell
+	);
 
 	const estimateMaxPoints = $derived.by(() => {
 		if (qType !== 'estimate') return null;
@@ -511,51 +512,11 @@
 		// default: no-op for other types
 	}
 
-	$effect(() => {
-		if (typeof document === 'undefined') return;
-		const update = () => {
-			canFullscreen =
-				typeof document.documentElement?.requestFullscreen === 'function' &&
-				typeof document.exitFullscreen === 'function';
-			isFullscreen = Boolean(document.fullscreenElement);
-		};
-		update();
-		document.addEventListener('fullscreenchange', update);
-		return () => document.removeEventListener('fullscreenchange', update);
-	});
-
-	async function toggleFullscreen() {
-		if (typeof document === 'undefined') return;
-		if (!canFullscreen) return;
-		try {
-			if (document.fullscreenElement) {
-				await document.exitFullscreen();
-				return;
-			}
-			await document.documentElement.requestFullscreen({ navigationUI: 'hide' } as any);
-		} catch {
-			// ignore (browser denied / unsupported)
-		}
-	}
-
 	// Kiosk-ish player mode: keep the page locked to the viewport and avoid browser scrolling/bounce.
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		document.documentElement.classList.add('kiosk-player');
 		document.body.classList.add('kiosk-player');
-
-		// In a normal browser tab, we can't programmatically hide the address bar/menu.
-		// Best-effort: request Fullscreen on the first user interaction (works on Android/desktop).
-		const isStandalone =
-			(typeof window !== 'undefined' &&
-				window.matchMedia?.('(display-mode: standalone)').matches) ||
-			(typeof navigator !== 'undefined' && (navigator as any).standalone === true);
-
-		const canFullscreen =
-			!isStandalone &&
-			typeof document !== 'undefined' &&
-			!document.fullscreenElement &&
-			typeof document.documentElement?.requestFullscreen === 'function';
 
 		return () => {
 			document.documentElement.classList.remove('kiosk-player');
@@ -571,28 +532,26 @@
 	class:bg-rose-950={reviewFeedback === 'wrong'}
 	onpointerdown={markAudioUnlocked}
 >
-	<div class="mx-auto flex h-full max-w-md flex-col px-4 py-4">
-		<header class="mb-4 flex items-center justify-end">
-			<div class="flex items-center gap-3">
-				{#if canFullscreen}
-					<button
-						class="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-100 active:scale-[0.99]"
-						aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-						onclick={toggleFullscreen}
-					>
-						{isFullscreen ? 'Exit' : 'Fullscreen'}
-					</button>
-				{/if}
+	<div
+		class="flex h-full"
+		class:flex-col={!immersivePhoneShell}
+		class:mx-auto={!immersivePhoneShell}
+		class:max-w-md={!immersivePhoneShell}
+		class:px-4={!immersivePhoneShell}
+		class:py-4={!immersivePhoneShell}
+	>
+		{#if !immersivePhoneShell}
+			<header class="mb-4 flex items-center justify-end">
 				<div class="text-right text-sm">
 					{#if selectedTeam}
 						<div class="font-semibold">{selectedTeam.name}</div>
 					{/if}
 					<div class="font-semibold">{myScore} pts</div>
 				</div>
-			</div>
-		</header>
+			</header>
+		{/if}
 
-		<div class="kiosk-scroll min-h-0 flex-1 overflow-y-auto">
+		<div class="flex-1" class:kiosk-scroll={!immersivePhoneShell} class:min-h-0={!immersivePhoneShell} class:overflow-y-auto={!immersivePhoneShell}>
 			{#if !connected}
 				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Connecting…</div>
 			{:else if !gameState}
@@ -666,55 +625,74 @@
 				</section>
 			{:else if gameState.status == 'question' || gameState.status === 'reading'}
 				{#if qcmUsesPhoneShell}
-					<section class="mx-auto w-full max-w-[25rem]" in:fly={{ y: 14, duration: 200 }}>
-						<div
-							class="relative aspect-[434/776] overflow-hidden rounded-[2.5rem] shadow-[0_2rem_4rem_rgba(0,0,0,0.55)]"
-						>
-							<img
-								src={appPath('/phone_bg.png')}
-								alt=""
-								class="pointer-events-none absolute inset-0 h-full w-full object-cover select-none"
-								draggable="false"
-							/>
+					<section class="h-full w-full" in:fly={{ y: 14, duration: 200 }}>
+						<div class="flex h-full w-full items-center justify-center overflow-hidden bg-slate-950">
+							<div
+								class="relative aspect-[434/776] w-full overflow-hidden"
+								style="width: min(100vw, calc(100dvh * 434 / 776));"
+							>
+								<img
+									src={appPath('/phone_bg.png')}
+									alt=""
+									class="pointer-events-none absolute inset-0 h-full w-full object-contain select-none"
+									draggable="false"
+								/>
 
-							<div class="absolute top-[4.5%] right-[6%]">
-								{#if gameState.status === 'reading'}
-									<div
-										class="animate-pulse rounded-full bg-slate-950/72 px-3 py-1 text-[0.68rem] font-black tracking-[0.22em] text-indigo-300 backdrop-blur-sm"
-									>
-										Reading
+								<div
+									class="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 px-[4.2%] pb-4"
+									style="padding-top: max(env(safe-area-inset-top), 1rem);"
+								>
+								{#if selectedTeam}
+									<div class="max-w-[70%] rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 backdrop-blur-sm">
+										<div class="truncate text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Team</div>
+										<div class="truncate text-[1.15rem] font-semibold text-white">{selectedTeam.name}</div>
 									</div>
-								{:else}
+								{/if}
+
+								<div class="flex flex-col items-end gap-2">
+									<div class="rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 text-right backdrop-blur-sm">
+										<div class="text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Score</div>
+										<div class="text-[1.15rem] font-semibold text-white">{myScore} pts</div>
+									</div>
+
+									{#if gameState.status === 'reading'}
+										<div class="animate-pulse rounded-full bg-slate-950/72 px-3 py-1 text-[0.68rem] font-black tracking-[0.22em] text-indigo-300 backdrop-blur-sm">
+											Reading
+										</div>
+									{:else}
+										<div
+											class="rounded-full bg-slate-950/72 px-3 py-1 text-sm font-black text-slate-100 backdrop-blur-sm"
+											class:text-red-300={gameState.timer < 5}
+										>
+											{gameState.timer}s
+										</div>
+									{/if}
+								</div>
+								</div>
+
+								{#key q?.id}
+									<QcmQuestion
+										question={q as any}
+										value={answer as any}
+										onChange={handleAnswerChange}
+										embeddedInPhoneShell
+									/>
+								{/key}
+
+								{#if !contemplateMode}
 									<div
-										class="rounded-full bg-slate-950/72 px-3 py-1 text-sm font-black text-slate-100 backdrop-blur-sm"
-										class:text-red-300={gameState.timer < 5}
+										class="absolute inset-x-[4.2%] rounded-[1.1rem] bg-slate-950/62 px-4 py-2.5 text-center text-[0.8rem] text-slate-200 backdrop-blur-sm"
+										style="bottom: max(env(safe-area-inset-bottom), 1rem);"
 									>
-										{gameState.timer}s
+										{#if hasSubmitted}
+											Last action submitted{#if lastSubmittedTimeLeft !== null}
+												at {lastSubmittedTimeLeft}s left{/if}.
+										{:else}
+											Not submitted yet.
+										{/if}
 									</div>
 								{/if}
 							</div>
-
-							{#key q?.id}
-								<QcmQuestion
-									question={q as any}
-									value={answer as any}
-									onChange={handleAnswerChange}
-									embeddedInPhoneShell
-								/>
-							{/key}
-
-							{#if !contemplateMode}
-								<div
-									class="absolute inset-x-[8%] bottom-[4%] rounded-[1.1rem] bg-slate-950/62 px-4 py-2.5 text-center text-[0.8rem] text-slate-200 backdrop-blur-sm"
-								>
-									{#if hasSubmitted}
-										Last action submitted{#if lastSubmittedTimeLeft !== null}
-											at {lastSubmittedTimeLeft}s left{/if}.
-									{:else}
-										Not submitted yet.
-									{/if}
-								</div>
-							{/if}
 						</div>
 					</section>
 				{:else}

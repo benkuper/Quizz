@@ -33,7 +33,7 @@
 		</div>
 
 		<div class="bottom">
-			{#each TEAM_DEFINITIONS as team}
+			{#each TEAM_DEFINITIONS.slice(0,2) as team}
 				<div class="phone-frame">
 					<div class="phone-header">{team.name}</div>
 					<div class="device-wrap">

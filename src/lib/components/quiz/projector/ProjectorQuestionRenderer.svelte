@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { GameStatus, KaraokePlaybackSync, QuizQuestion, OptionRevealState } from '$lib/quiz/types';
 	import QcmView from './types/QcmView.svelte';
-	import DeblurView from './types/DeblurView.svelte';
 	import SortingView from './types/SortingView.svelte';
 	import EstimateView from './types/EstimateView.svelte';
 	import FastFingersView from './types/FastFingersView.svelte';
@@ -17,11 +16,10 @@
 		karaokeSync?: KaraokePlaybackSync;
 		optionReveal?: OptionRevealState;
 		roundSummary?: any;
-		timer?: number;
 		onPassiveFinished?: () => void;
 	};
 
-	let { status, question, karaokeSync, optionReveal, roundSummary, timer = 0, onPassiveFinished }: Props = $props();
+	let { status, question, karaokeSync, optionReveal, roundSummary, onPassiveFinished }: Props = $props();
 	const type = $derived(String(question?.type || ''));
 
 	function text(q: QuizQuestion) {
@@ -35,12 +33,12 @@
 	{:else}
 		{#if !isPassiveQuestionType(type)}
 			<h2 class="q-text">{text(question)}</h2>
-			<QuestionImageStrip questionId={question.id} />
+			{#if type !== 'qcm'}
+				<QuestionImageStrip questionId={question.id} />
+			{/if}
 		{/if}
 		{#if status === 'reading'}
 			<div class="reading-spacer"></div>
-		{:else if type === 'deblur'}
-			<DeblurView {status} question={question as any} {optionReveal} {timer} />
 		{:else if isQcmLikeQuestionType(type)}
 			<QcmView {status} question={question as any} {optionReveal} />
 		{:else if type === 'sorting'}

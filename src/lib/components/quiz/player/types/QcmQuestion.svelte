@@ -1,11 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type {
-		QuizOptionAnswer,
-		QuizQuestionDeblur,
-		QuizQuestionPerfectMatch,
-		QuizQuestionQcm
-	} from '$lib/quiz/types';
+	import type { QuizOptionAnswer, QuizQuestionPerfectMatch, QuizQuestionQcm } from '$lib/quiz/types';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	function appPath(path: string) {
@@ -56,7 +51,7 @@
 	] as const;
 
 	type Props = {
-		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
+		question: QuizQuestionQcm | QuizQuestionPerfectMatch;
 		value: QuizOptionAnswer | QuizOptionAnswer[] | null;
 		onChange: (next: QuizOptionAnswer | QuizOptionAnswer[] | null) => void;
 		embeddedInPhoneShell?: boolean;
@@ -229,7 +224,7 @@
 	.phone-button-fallback-b,
 	.phone-button-fallback-c,
 	.phone-button-fallback-d {
-		/* border-radius: 1.75rem; */
+		border-radius: 1.75rem;
 		box-shadow:
 			inset 0 0.14rem 0.5rem rgba(255, 255, 255, 0.35),
 			inset 0 -0.18rem 0.7rem rgba(0, 0, 0, 0.25),
@@ -254,6 +249,6 @@
 
 	button.selected span {
 		text-shadow: 0 0.14em 0.45em rgba(0, 0, 0, 0.75);
-		color : black;
+		color: black;
 	}
 </style>

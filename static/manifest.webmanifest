@@ -1,14 +1,14 @@
 {
 	"name": "Quizz",
 	"short_name": "Quizz",
-	"start_url": "/",
-	"scope": "/",
+	"start_url": ".",
+	"scope": ".",
 	"display": "standalone",
 	"background_color": "#020617",
 	"theme_color": "#020617",
 	"icons": [
 		{
-			"src": "/phone_placeholder.png",
+			"src": "./phone_placeholder.png",
 			"sizes": "any",
 			"type": "image/png"
 		}

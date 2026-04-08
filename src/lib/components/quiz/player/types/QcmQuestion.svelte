@@ -1,11 +1,20 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type { QuizOptionAnswer, QuizQuestionQcm } from '$lib/quiz/types';
+	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
+
+	function appPath(path: string) {
+		const normalized = path.startsWith('/') ? path : `/${path}`;
+		return typeof window === 'undefined'
+			? `${base || '.'}${normalized}`
+			: resolveAppAssetUrl(normalized);
+	}
 
 	const OPTION_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	const PHONE_BUTTON_LAYOUT = [
 		{
 			label: 'A',
-			selectedSrc: '/phone_bt_A.png',
+			selectedSrc: appPath('/phone_bt_A.png'),
 			left: '5.75%',
 			top: '44.1%',
 			width: '41.8%',
@@ -14,7 +23,7 @@
 		},
 		{
 			label: 'B',
-			selectedSrc: '/phone_bt_B.png',
+			selectedSrc: appPath('/phone_bt_B.png'),
 			left: '52.2%',
 			top: '44.1%',
 			width: '41.8%',
@@ -23,7 +32,7 @@
 		},
 		{
 			label: 'C',
-			selectedSrc: '/phone_bt_C.png',
+			selectedSrc: appPath('/phone_bt_C.png'),
 			left: '5.75%',
 			top: '56.2%',
 			width: '41.8%',
@@ -32,7 +41,7 @@
 		},
 		{
 			label: 'D',
-			selectedSrc: '/phone_bt_D.png',
+			selectedSrc: appPath('/phone_bt_D.png'),
 			left: '52.2%',
 			top: '56.2%',
 			width: '41.8%',
@@ -52,7 +61,9 @@
 	let unavailableSelectedAssets = $state<Record<number, boolean>>({});
 
 	const isMulti = $derived(Boolean(question.multiple));
-	const usePhoneLayout = $derived((question.options?.length ?? 0) > 0 && (question.options?.length ?? 0) <= 4);
+	const usePhoneLayout = $derived(
+		(question.options?.length ?? 0) > 0 && (question.options?.length ?? 0) <= 4
+	);
 	const phoneOptions = $derived.by(() => {
 		return (question.options ?? []).slice(0, PHONE_BUTTON_LAYOUT.length).map((opt, index) => ({
 			option: opt,
@@ -76,7 +87,11 @@
 		if (!trimmed) return null;
 
 		const numericValue = Number(trimmed);
-		if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= (question.options?.length ?? 0)) {
+		if (
+			Number.isInteger(numericValue) &&
+			numericValue >= 1 &&
+			numericValue <= (question.options?.length ?? 0)
+		) {
 			return numericValue;
 		}
 
@@ -89,7 +104,9 @@
 		return optionIndex >= 0 ? optionIndex + 1 : null;
 	}
 
-	const selectedSingle = $derived(!isMulti ? toOptionIndex(Array.isArray(value) ? null : value) : null);
+	const selectedSingle = $derived(
+		!isMulti ? toOptionIndex(Array.isArray(value) ? null : value) : null
+	);
 	const selectedMulti = $derived.by(() => {
 		if (!isMulti || !Array.isArray(value)) return [] as number[];
 
@@ -124,17 +141,15 @@
 
 {#if usePhoneLayout}
 	<div
-		class={
-			embeddedInPhoneShell
-				? 'absolute inset-0'
-				: 'relative mx-auto aspect-[434/776] w-full overflow-hidden rounded-[2.25rem] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.45)]'
-		}
+		class={embeddedInPhoneShell
+			? 'absolute inset-0'
+			: 'relative mx-auto aspect-[434/776] w-full overflow-hidden rounded-[2.25rem] shadow-[0_1.5rem_3rem_rgba(0,0,0,0.45)]'}
 	>
 		{#if !embeddedInPhoneShell}
 			<img
-				src="/phone_bg.png"
+				src={appPath('/phone_bg.png')}
 				alt=""
-				class="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
+				class="pointer-events-none absolute inset-0 h-full w-full object-cover select-none"
 				draggable="false"
 			/>
 		{/if}
@@ -168,7 +183,9 @@
 					{/if}
 				{/if}
 
-				<span class="pointer-events-none absolute inset-0 flex items-center justify-center text-[clamp(1.4rem,4.8vw,2.6rem)] font-black tracking-[0.24em] text-white [text-shadow:0_0.14em_0.45em_rgba(0,0,0,0.75)]">
+				<span
+					class="pointer-events-none absolute inset-0 flex items-center justify-center text-[clamp(1.4rem,4.8vw,2.6rem)] font-black tracking-[0.24em] text-white [text-shadow:0_0.14em_0.45em_rgba(0,0,0,0.75)]"
+				>
 					{layout.label}
 				</span>
 			</button>
@@ -180,8 +197,10 @@
 			<button
 				type="button"
 				class="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-4 text-center text-3xl font-black tracking-[0.2em] active:scale-[0.99]"
-				class:ring-2={(!isMulti && selectedSingle === index + 1) || (isMulti && selectedMulti.includes(index + 1))}
-				class:ring-indigo-400={(!isMulti && selectedSingle === index + 1) || (isMulti && selectedMulti.includes(index + 1))}
+				class:ring-2={(!isMulti && selectedSingle === index + 1) ||
+					(isMulti && selectedMulti.includes(index + 1))}
+				class:ring-indigo-400={(!isMulti && selectedSingle === index + 1) ||
+					(isMulti && selectedMulti.includes(index + 1))}
 				aria-label={opt}
 				title={opt}
 				onclick={() => toggle(index + 1)}
@@ -189,7 +208,9 @@
 				<div class="flex items-center justify-center gap-3">
 					<span>{optionLabel(index)}</span>
 					{#if isMulti}
-						<span class="text-sm text-slate-300">{selectedMulti.includes(index + 1) ? '✓' : ''}</span>
+						<span class="text-sm text-slate-300"
+							>{selectedMulti.includes(index + 1) ? '✓' : ''}</span
+						>
 					{:else}
 						<span class="text-sm text-slate-300">{selectedSingle === index + 1 ? '✓' : ''}</span>
 					{/if}
@@ -227,4 +248,3 @@
 		background: linear-gradient(180deg, #ffd37a 0%, #ff8e1a 55%, #bd5400 100%);
 	}
 </style>
-

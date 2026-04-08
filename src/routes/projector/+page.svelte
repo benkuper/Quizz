@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type PartySocket from 'partysocket';
 	import ProjectorScreen from '$lib/components/projector/ProjectorScreen.svelte';
 	import { toDataURL } from 'qrcode';
@@ -7,6 +8,8 @@
 	import { urlState } from '$lib/url.svelte';
 	import SignContainer from '$lib/components/projector/SignContainer.svelte';
 	import PlayerInfo from '$lib/components/projector/PlayerInfo.svelte';
+	import { isKaraokeQuestionType, isPassiveQuestionType } from '$lib/quiz/questionTypes';
+	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	let gameState: any = $state(null);
 	let socket: PartySocket | null = $state(null);
@@ -14,6 +17,13 @@
 	let joinQrDataUrl: string | null = $state(null);
 	let screenOpacity = $state(1.0);
 	let beamOpacity = $state(1.0);
+
+	function appPath(path: string) {
+		const normalized = path.startsWith('/') ? path : `/${path}`;
+		return typeof window === 'undefined'
+			? `${base || '.'}${normalized}`
+			: resolveAppAssetUrl(normalized);
+	}
 
 	const sortedPlayers = $derived.by(() =>
 		gameState?.players
@@ -118,6 +128,7 @@
 
 	$effect(() => {
 		if (!gameState) return;
+		const questionType = gameState.question?.type;
 		switch (gameState.status) {
 			case 'lobby':
 				sign1Text = 'SNACKS';
@@ -126,16 +137,36 @@
 				break;
 			case 'reading':
 				if (gameState.question) {
-					sign1Text = 'QUESTION';
-					sign2Text = `${gameState.actualQuestionIndex ?? ''}`;
-					sign3Text = 'LECTURE';
+					if (isKaraokeQuestionType(questionType)) {
+						sign1Text = 'KARA';
+						sign2Text = 'OKE';
+						sign3Text = 'READY';
+					} else if (isPassiveQuestionType(questionType)) {
+						sign1Text = 'INTER';
+						sign2Text = 'MEDE';
+						sign3Text = 'SHOW';
+					} else {
+						sign1Text = 'QUESTION';
+						sign2Text = `${gameState.actualQuestionIndex ?? ''}`;
+						sign3Text = 'LECTURE';
+					}
 				}
 				break;
 			case 'question':
 				if (gameState.question) {
-					sign1Text = 'TEMPS';
-					sign2Text = `${gameState.timer ?? ''}`;
-					sign3Text = 'RESTANT';
+					if (isKaraokeQuestionType(questionType)) {
+						sign1Text = 'KARA';
+						sign2Text = 'OKE';
+						sign3Text = 'LIVE';
+					} else if (isPassiveQuestionType(questionType)) {
+						sign1Text = 'FILM';
+						sign2Text = 'EN';
+						sign3Text = 'COURS';
+					} else {
+						sign1Text = 'TEMPS';
+						sign2Text = `${gameState.timer ?? ''}`;
+						sign3Text = 'RESTANT';
+					}
 				}
 				break;
 
@@ -161,26 +192,26 @@
 		}
 	});
 
-	function isMediaQuestion() {
-		return String(gameState?.question?.type ?? '') === 'media';
+	function isPassiveQuestion() {
+		return isPassiveQuestionType(gameState?.question?.type);
 	}
 
-	function handleMediaFinished() {
+	function handlePassiveFinished() {
 		if (!socket) return;
 		if (!gameState || gameState.status !== 'question') return;
-		if (!isMediaQuestion()) return;
+		if (!isPassiveQuestion()) return;
 		const qid = String(gameState?.question?.id ?? '');
 		if (!qid) return;
 		if (lastAutoAdvanceQuestionId === qid) return;
 		lastAutoAdvanceQuestionId = qid;
-		socket.send(JSON.stringify({ type: 'media_finished', questionId: qid }));
+		socket.send(JSON.stringify({ type: 'passive_finished', questionId: qid }));
 	}
 </script>
 
 <main class="projector" style="--scale:{projectorScale};">
 	<img
 		class="full"
-		src="{urlState.basePath}/projector/drivein.png"
+		src={appPath('/projector/drivein.png')}
 		style="--screen-opacity:{screenOpacity};"
 		alt=""
 		aria-hidden="true"
@@ -193,7 +224,7 @@
 			{correctPlayers}
 			{wrongPlayers}
 			{sortedPlayers}
-			onMediaFinished={handleMediaFinished}
+			onPassiveFinished={handlePassiveFinished}
 		/>
 	</div>
 
@@ -215,9 +246,9 @@
 			{/if}
 		</div> -->
 	</div>
-	<img class="erics" src="{urlState.basePath}/projector/erics.png " alt="" aria-hidden="true" />
-	<img class="sign" src="{urlState.basePath}/projector/sign.png" alt="" aria-hidden="true" />
-	<img class="fleche" src="{urlState.basePath}/projector/fleche.png" alt="" aria-hidden="true" />
+	<img class="erics" src={appPath('/projector/erics.png')} alt="" aria-hidden="true" />
+	<img class="sign" src={appPath('/projector/sign.png')} alt="" aria-hidden="true" />
+	<img class="fleche" src={appPath('/projector/fleche.png')} alt="" aria-hidden="true" />
 
 	<SignContainer text={sign1Text} variant="yellow" x={51} y={-58.5} size={1.3} flicker={5}
 	></SignContainer>
@@ -226,7 +257,7 @@
 	></SignContainer>
 	<img
 		class="beam full"
-		src="{urlState.basePath}/projector/beam.png"
+		src={appPath('/projector/beam.png')}
 		style="--beam-opacity:{beamOpacity};"
 		alt=""
 		aria-hidden="true"
@@ -409,15 +440,5 @@
 		justify-content: center;
 		height: 100%;
 		padding: 0.5rem;
-	}
-
-	.status-left {
-		display: flex;
-		align-items: center;
-		gap: 0.8rem;
-	}
-
-	.status-right {
-		font-weight: 700;
 	}
 </style>

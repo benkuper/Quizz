@@ -1,198 +1,176 @@
 {
-    "questionTypes": {
-        "media": "Media Interlude",
-        "qcm": "Multiple Choice Question",
-        "deblur": "Deblur the Image Question",
-        "comparison": "Comparison Question",
-        "sorting": "Sorting Question",
-        "estimate": "Estimation Question",
-        "fastFingers": "Fast Fingers Question",
-        "maplocation": "Map Location Question",
-        "draw": "Draw the Answer Question",
-        "perfectmatch": "Perfect Match Question"
-    },
-    "questions": [
-        {
-            "id": "intro",
-            "type": "media",
-            "noreading": true,
-            "question": "Intro",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
-        },
-        {
-            "id": "age_tontons",
-            "type": "qcm",
-            "time": 30,
-            "introSound": "engine.wav",
-            "question": "Quel âge avait Eric lors de la sortie des Tontons Flingueurs ?",
-            "options": [
-                "Il n'était pas né",
-                "7 ans",
-                "15 ans",
-                "35 ans, il a même joué dedans"
-            ],
-            "answers": [
-                "7 ans"
-            ]
-        },
-        {
-            "id": "cadillac",
-            "type": "qcm",
-            "question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
-            "options": [
-                "Le Redoutable, célèbre sous-marin nucléaire Français",
-                "Une Audi A4 qui n'est pas tombé en panne (exemplaire unique au monde)",
-                "Le trans-sibérien. C'était froid, mais c'était beau.",
-                "La Cadillac rose de ses rêves"
-            ],
-            "answers": [
-                "La Cadillac rose de ses rêves"
-            ]
-        },
-        {
-            "id": "intermede",
-            "type": "media",
-            "question": "Intermede",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
-        },
-        {
-            "id": "ocean",
-            "introSound": "engine.wav",
-            "vibration": [
-                50,
-                500,
-                50,
-                100,
-                50,
-                100,
-                1000
-            ],
-            "type": "qcm",
-            "question": "J'ai déjà signé des autographes en tant que...",
-            "options": [
-                "Alain (de loin)",
-                "Robert Redford (mais plutôt Robert que Redford)",
-                "Pierre Richard",
-                "Pierre Niney"
-            ],
-            "answers": [
-                "Alain (de loin)"
-            ]
-        },
-        {
-            "id": "evenements",
-            "type": "sorting",
-            "question": "Classez ces événements dans l'ordre chronologique",
-            "options": [
-                "Son mariage avec Fabienne",
-                "Son brevet de pilote",
-                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
-                "Le déménagement à St-Philbert-des-Champs"
-            ],
-            "answers": [
-                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
-                "Son mariage avec Fabienne",
-                "Son brevet de pilote",
-                "Le déménagement à St-Philbert-des-Champs"
-            ]
-        },
-        {
-            "id": "antonio",
-            "type": "estimate",
-            "question": "In which year did humans first land on the Moon?",
-            "estimate": {
-                "unit": "year",
-                "min": 1900,
-                "max": 2026,
-                "step": 1,
-                "scoring": {
-                    "maxPoints": 10,
-                    "decay": "linear",
-                    "zeroAt": 5,
-                    "correctWithin": 0
-                }
-            },
-            "answers": [
-                1969
-            ]
-        },
-        {
-            "id": "catClick",
-            "type": "fastFingers",
-            "time": 25,
-            "question": [
-                "Fast Fingers: click the CAT as fast as you can."
-            ],
-            "fastFingers": {
-                "shuffle": true,
-                "steps": [
-                    {
-                        "good": {
-                            "src": "fastfingers/cat.svg",
-                            "alt": "Cat"
-                        },
-                        "bad": {
-                            "src": "fastfingers/dog.svg",
-                            "alt": "Dog"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/apple.svg",
-                            "alt": "Apple"
-                        },
-                        "bad": {
-                            "src": "fastfingers/banana.svg",
-                            "alt": "Banana"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/cat.svg",
-                            "alt": "Cat"
-                        },
-                        "bad": {
-                            "src": "fastfingers/banana.svg",
-                            "alt": "Banana"
-                        }
-                    },
-                    {
-                        "good": {
-                            "src": "fastfingers/apple.svg",
-                            "alt": "Apple"
-                        },
-                        "bad": {
-                            "src": "fastfingers/dog.svg",
-                            "alt": "Dog"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "id": "outro",
-            "type": "media",
-            "time": 12,
-            "question": "Thanks for playing!",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
-        }
-    ]
+	"questionTypes": {
+		"media": "Media Interlude",
+		"qcm": "Multiple Choice Question",
+		"deblur": "Deblur the Image Question",
+		"comparison": "Comparison Question",
+		"sorting": "Sorting Question",
+		"estimate": "Estimation Question",
+		"fastFingers": "Fast Fingers Question",
+		"maplocation": "Map Location Question",
+		"draw": "Draw the Answer Question",
+		"perfectmatch": "Perfect Match Question",
+		"karaoke": "Karaoke Interlude"
+	},
+	"questions": [
+		{
+			"id": "intro",
+			"type": "media",
+			"noreading": true,
+			"question": "Intro",
+			"media": {
+				"kind": "video",
+				"src": "intro.mp4",
+				"autoplay": true,
+				"muted": false,
+				"controls": false
+			}
+		},
+		{
+			"id": "age_tontons",
+			"type": "qcm",
+			"time": 30,
+			"introSound": "engine.wav",
+			"question": "Quel âge avait Eric lors de la sortie des Tontons Flingueurs ?",
+			"options": ["Il n'était pas né", "7 ans", "15 ans", "35 ans, il a même joué dedans"],
+			"answers": ["7 ans"]
+		},
+		{
+			"id": "cadillac",
+			"type": "qcm",
+			"question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
+			"options": [
+				"Le Redoutable, célèbre sous-marin nucléaire Français",
+				"Une Audi A4 qui n'est pas tombé en panne (exemplaire unique au monde)",
+				"Le trans-sibérien. C'était froid, mais c'était beau.",
+				"La Cadillac rose de ses rêves"
+			],
+			"answers": ["La Cadillac rose de ses rêves"]
+		},
+		{
+			"id": "intermede",
+			"type": "media",
+			"question": "Intermede",
+			"media": {
+				"kind": "video",
+				"src": "intro.mp4",
+				"autoplay": true,
+				"muted": false,
+				"controls": false
+			}
+		},
+		{
+			"id": "ocean",
+			"introSound": "engine.wav",
+			"vibration": [50, 500, 50, 100, 50, 100, 1000],
+			"type": "qcm",
+			"question": "J'ai déjà signé des autographes en tant que...",
+			"options": [
+				"Alain (de loin)",
+				"Robert Redford (mais plutôt Robert que Redford)",
+				"Pierre Richard",
+				"Pierre Niney"
+			],
+			"answers": ["Alain (de loin)"]
+		},
+		{
+			"id": "evenements",
+			"type": "sorting",
+			"question": "Classez ces événements dans l'ordre chronologique",
+			"options": [
+				"Son mariage avec Fabienne",
+				"Son brevet de pilote",
+				"La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
+				"Le déménagement à St-Philbert-des-Champs"
+			],
+			"answers": [
+				"La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
+				"Son mariage avec Fabienne",
+				"Son brevet de pilote",
+				"Le déménagement à St-Philbert-des-Champs"
+			]
+		},
+		{
+			"id": "antonio",
+			"type": "estimate",
+			"question": "In which year did humans first land on the Moon?",
+			"estimate": {
+				"unit": "year",
+				"min": 1900,
+				"max": 2026,
+				"step": 1,
+				"scoring": {
+					"maxPoints": 10,
+					"decay": "linear",
+					"zeroAt": 5,
+					"correctWithin": 0
+				}
+			},
+			"answers": [1969]
+		},
+		{
+			"id": "catClick",
+			"type": "fastFingers",
+			"time": 25,
+			"question": ["Fast Fingers: click the CAT as fast as you can."],
+			"fastFingers": {
+				"shuffle": true,
+				"steps": [
+					{
+						"good": {
+							"src": "fastfingers/cat.svg",
+							"alt": "Cat"
+						},
+						"bad": {
+							"src": "fastfingers/dog.svg",
+							"alt": "Dog"
+						}
+					},
+					{
+						"good": {
+							"src": "fastfingers/apple.svg",
+							"alt": "Apple"
+						},
+						"bad": {
+							"src": "fastfingers/banana.svg",
+							"alt": "Banana"
+						}
+					},
+					{
+						"good": {
+							"src": "fastfingers/cat.svg",
+							"alt": "Cat"
+						},
+						"bad": {
+							"src": "fastfingers/banana.svg",
+							"alt": "Banana"
+						}
+					},
+					{
+						"good": {
+							"src": "fastfingers/apple.svg",
+							"alt": "Apple"
+						},
+						"bad": {
+							"src": "fastfingers/dog.svg",
+							"alt": "Dog"
+						}
+					}
+				]
+			}
+		},
+		{
+			"id": "outro",
+			"type": "media",
+			"time": 12,
+			"question": "Thanks for playing!",
+			"media": {
+				"kind": "video",
+				"src": "intro.mp4",
+				"autoplay": true,
+				"muted": false,
+				"controls": false
+			}
+		}
+	]
 }

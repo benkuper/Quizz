@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type PartySocket from 'partysocket';
 	import { fade, fly } from 'svelte/transition';
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
@@ -9,6 +10,8 @@
 	import { createAudioPlayer } from '$lib/utils/audio.svelte';
 	import { createScreenWakeLock } from '$lib/utils/wakeLock.svelte';
 	import { getMedia } from '$lib/url.svelte';
+	import { isPassiveQuestionType } from '$lib/quiz/questionTypes';
+	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
@@ -34,6 +37,13 @@
 	let lastIntroSoundKey: string | null = null;
 	let pendingIntroSound: { src: string; key: string } | null = null;
 	let audioUnlocked = $state(false);
+
+	function appPath(path: string) {
+		const normalized = path.startsWith('/') ? path : `/${path}`;
+		return typeof window === 'undefined'
+			? `${base || '.'}${normalized}`
+			: resolveAppAssetUrl(normalized);
+	}
 
 	function markAudioUnlocked() {
 		if (audioUnlocked) return;
@@ -77,8 +87,8 @@
 	let hasSubmitted: boolean = $state(false);
 	let lastSubmittedTimeLeft: number | null = $state(null);
 
-	// if question is media, we enter "contemplate" mode (no UI)
-	let contemplateMode = $derived(gameState?.question?.type === 'media');
+	// Passive rounds (media, karaoke) hide answer submission chrome.
+	let contemplateMode = $derived(isPassiveQuestionType(gameState?.question?.type));
 
 	const myScore = $derived(
 		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.score) ?? 0
@@ -396,7 +406,7 @@
 		answer = next;
 		if (gameState?.status === 'reading') return;
 		if (!q) return;
-		if (qType === 'media') return;
+		if (isPassiveQuestionType(qType)) return;
 		if (qType === 'fastFingers' || qType === 'vrwhack') return;
 		if (qType === 'estimate') {
 			const n = Number(next);
@@ -545,7 +555,7 @@
 							class="relative aspect-[434/776] overflow-hidden rounded-[2.5rem] shadow-[0_2rem_4rem_rgba(0,0,0,0.55)]"
 						>
 							<img
-								src="/phone_bg.png"
+								src={appPath('/phone_bg.png')}
 								alt=""
 								class="pointer-events-none absolute inset-0 h-full w-full object-cover select-none"
 								draggable="false"
@@ -593,7 +603,7 @@
 					</section>
 				{:else}
 					<section class="space-y-4" in:fly={{ y: 14, duration: 200 }}>
-						{#if qType !== 'media'}
+						{#if !isPassiveQuestionType(qType)}
 							<div class="flex justify-end">
 								{#if gameState.status === 'reading'}
 									<div
@@ -614,7 +624,12 @@
 
 						{#key q?.id}
 							<PlayerQuestionRenderer
+								status={gameState.status}
 								question={q}
+								karaokeSync={{
+									serverNow: gameState.serverNow ?? null,
+									questionStartedAt: gameState.questionStartedAt ?? null
+								}}
 								value={answer}
 								onChange={handleAnswerChange}
 								onAutoSubmit={autoSubmit}

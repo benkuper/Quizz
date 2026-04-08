@@ -105,6 +105,35 @@ export type QuizQuestionMedia = QuizQuestionBase & {
 	media: QuizMediaItem | QuizMediaItem[];
 };
 
+export type QuizKaraokePhrase = {
+	startSec: number;
+	endSec?: number;
+	text: string;
+};
+
+export type QuizKaraokeLyricsDocument = {
+	tempoBpm?: number;
+	ticksPerQuarter?: number;
+	note?: string;
+	phrases: QuizKaraokePhrase[];
+};
+
+export type QuizQuestionKaraoke = QuizQuestionBase & {
+	type: 'karaoke';
+	karaoke: {
+		audio: string;
+		lyrics: string;
+		title?: string;
+		artist?: string;
+		offsetSec?: number;
+	};
+};
+
+export type KaraokePlaybackSync = {
+	serverNow: number | null;
+	questionStartedAt: number | null;
+};
+
 export type QuizQuestion =
 	| QuizQuestionQcm
 	| QuizQuestionSorting
@@ -112,6 +141,7 @@ export type QuizQuestion =
 	| QuizQuestionFastFingers
 	| QuizQuestionVrWhack
 	| QuizQuestionMedia
+	| QuizQuestionKaraoke
 	| (QuizQuestionBase & Record<string, unknown>);
 
 export type PlayerView = {
@@ -133,6 +163,8 @@ export type BroadcastState = {
 	question?: QuizQuestion;
 	totalQuestions: number;
 	timer: number;
+	serverNow?: number;
+	questionStartedAt?: number | null;
 	players: Record<string, PlayerView>;
 	answerCount: number;
 	roundSummary?: {

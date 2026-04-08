@@ -8,6 +8,8 @@
 		roundSummary?: any;
 		answerCount?: number;
 		timer?: number;
+		serverNow?: number;
+		questionStartedAt?: number | null;
 	};
 
 	const {
@@ -17,7 +19,7 @@
 		correctPlayers,
 		wrongPlayers,
 		sortedPlayers,
-		onMediaFinished
+		onPassiveFinished
 	} = $props<{
 		gameState: GameState | null;
 		joinUrl: string | null;
@@ -25,7 +27,7 @@
 		correctPlayers: any[];
 		wrongPlayers: any[];
 		sortedPlayers: any[];
-		onMediaFinished: () => void;
+		onPassiveFinished: () => void;
 	}>();
 </script>
 
@@ -52,8 +54,12 @@
 			<ProjectorQuestionRenderer
 				status={gameState.status}
 				question={gameState.question}
+				karaokeSync={{
+					serverNow: gameState.serverNow ?? null,
+					questionStartedAt: gameState.questionStartedAt ?? null
+				}}
 				roundSummary={gameState.roundSummary}
-				{onMediaFinished}
+				{onPassiveFinished}
 			/>
 		</div>
 	{:else if gameState.status === 'finished'}

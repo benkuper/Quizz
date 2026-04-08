@@ -1,21 +1,24 @@
 <script lang="ts">
-	import type { GameStatus, QuizQuestion } from '$lib/quiz/types';
+	import type { GameStatus, KaraokePlaybackSync, QuizQuestion } from '$lib/quiz/types';
 	import QcmView from './types/QcmView.svelte';
 	import SortingView from './types/SortingView.svelte';
 	import EstimateView from './types/EstimateView.svelte';
 	import FastFingersView from './types/FastFingersView.svelte';
 	import MediaView from './types/MediaView.svelte';
+	import KaraokeView from './types/KaraokeView.svelte';
 	import VrWhackView from './types/VrWhackView.svelte';
 	import QuestionImageStrip from './QuestionImageStrip.svelte';
+	import { isPassiveQuestionType } from '$lib/quiz/questionTypes';
 
 	type Props = {
 		status: GameStatus;
 		question: QuizQuestion | undefined;
+		karaokeSync?: KaraokePlaybackSync;
 		roundSummary?: any;
-		onMediaFinished?: () => void;
+		onPassiveFinished?: () => void;
 	};
 
-	let { status, question, roundSummary, onMediaFinished }: Props = $props();
+	let { status, question, karaokeSync, roundSummary, onPassiveFinished }: Props = $props();
 	const type = $derived(String(question?.type || ''));
 
 	function text(q: QuizQuestion) {
@@ -27,7 +30,7 @@
 	{#if !question}
 		<div class="loading">Loading question…</div>
 	{:else}
-		{#if type !== 'media'}
+		{#if !isPassiveQuestionType(type)}
 			<h2 class="q-text">{text(question)}</h2>
 			<QuestionImageStrip questionId={question.id} />
 		{/if}
@@ -40,7 +43,14 @@
 		{:else if type === 'fastFingers'}
 			<FastFingersView {status} question={question as any} />
 		{:else if type === 'media'}
-			<MediaView {status} question={question as any} onFinished={onMediaFinished} />
+			<MediaView {status} question={question as any} onFinished={onPassiveFinished} />
+		{:else if type === 'karaoke'}
+			<KaraokeView
+				{status}
+				question={question as any}
+				sync={karaokeSync}
+				onFinished={onPassiveFinished}
+			/>
 		{:else if type === 'vrwhack'}
 			<VrWhackView {status} question={question as any} />
 		{:else}
@@ -72,8 +82,8 @@
 	:global {
 		.option {
 			font-size: 2.5rem;
-			min-width:4rem;
-			font-size:3rem;
+			min-width: 4rem;
+			font-size: 3rem;
 		}
 
 		.ans-pill {

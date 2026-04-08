@@ -1,297 +1,236 @@
 {
-    "questionTypes": {
-        "media": "Media Interlude",
-        "qcm": "QCM",
-        "deblur": "Deblur the Image Question",
-        "comparison": "Comparison Question",
-        "sorting": "Sorting Question",
-        "estimate": "Estimation Question",
-        "fastFingers": "Fast Fingers Question",
-        "maplocation": "Map Location Question",
-        "draw": "Draw the Answer Question",
-        "perfectmatch": "Perfect Match Question"
-    },
-    "questions": [
-        {
-            "id": "intro",
-            "type": "media",
-            "noreading": true,
-            "question": "Intro",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
-        },
-        {
-            "id": "age_tontons",
-            "type": "qcm",
-            "time": 30,
-            "introSound": "engine.wav",
-            "question": "Quel âge avait Eric lors de la sortie des Tontons Flingueurs ?",
-            "options": [
-                "Il n'était pas né",
-                "7 ans",
-                "15 ans",
-                "35 ans, il a même joué dedans"
-            ],
-            "answers": [
-                2
-            ]
-        },
-        {
-            "id": "cadillac",
-            "type": "qcm",
-            "question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
-            "options": [
-                "Le Redoutable, célèbre sous-marin nucléaire Français",
-                "Une Audi A4 qui n'est pas tombée en panne (exemplaire unique au monde)",
-                "Le transsibérien. C'était froid, mais c'était beau.",
-                "La Cadillac rose de ses rêves"
-            ],
-            "answers": [
-                4
-            ]
-        },
-        {
-            "id": "autographe",
-            "introSound": "engine.wav",
-            "vibration": [
-                50,
-                500,
-                50,
-                100,
-                50,
-                100,
-                1000
-            ],
-            "type": "qcm",
-            "question": "J'ai déjà signé des autographes en tant que...",
-            "options": [
-                "Alain (de loin)",
-                "Robert Redford (mais plutôt Robert que Redford)",
-                "Pierre Richard",
-                "Pierre Niney"
-            ],
-            "answers": [
-                3
-            ]
-        },
-        {
-            "id": "evenements",
-            "type": "sorting",
-            "question": "Classez ces événements dans l'ordre chronologique",
-            "options": [
-                "Son mariage avec Fabienne",
-                "Son brevet de pilote",
-                "La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
-                "Le déménagement à St-Philbert-des-Champs"
-            ],
-            "answers": [
-                3,
-                1,
-                2,
-                4
-            ]
-        },
-        {
-            "id": "antonio",
-            "type": "qcm",
-            "question": "Une raclette sans fromage c'est comme une bibliothèque sans...",
-            "options": [
-                "Francisco",
-                "Antonio",
-                "Gepetto",
-                "Robert"
-            ],
-            "answers": [
-                2
-            ]
-        },
-        {
-            "id": "db2",
-            "type": "qcm",
-            "time": 25,
-            "question": "Problème Electrique : ca a l'air d'être un problème dans la base de données.. seul Eric peut nous sauver ! Mais quelle est donc cette technologie ?",
-            "options": [
-                "DBZ",
-                "DB2",
-                "R2D2",
-                "H2G2"
-            ],
-            "answers": [
-                2
-            ]
-        },
-        {
-            "id": "magazine",
-            "type": "qcm",
-            "time": 25,
-            "question": [
-                "Eric a été célèbre pour sa passion pour..."
-            ],
-            "options": [
-                "Les Corn Flakes",
-                "Les arts martiaux",
-                "Les trucs de geek",
-                "Lui-même"
-            ],
-            "answers": [
-                3
-            ]
-        },
-        {
-            "id": "voler",
-            "type": "qcm",
-            "time": 25,
-            "question": "Eric aimer voler...",
-            "options": [
-                "Il est incapable de résister à piquer de menus objets souvenirs dans les restaurants",
-                "Il a fait du parapente",
-                "Il a piloté des avions",
-                "Il pratique le Wingsuit"
-            ],
-            "answers": [
-                2,
-                3
-            ]
-        },
-        {
-            "id": "continent",
-            "type": "qcm",
-            "time": 25,
-            "question": "Le ou lesquels de ces continents Eric n'a jamais visité ?",
-            "options": [
-                "Afrique",
-                "Amérique du Nord",
-                "Amérique du Sud",
-                "Australie / Océanie",
-                "Asie",
-                "Antarctique",
-                "Europe"
-            ],
-            "answers": [
-                3,
-                6
-            ]
-        },
-        {
-            "id": "militaire",
-            "type": "burger",
-            "time": 25,
-            "question": "Questions militaires",
-            "options": [
-                "Boisson favorite (et surconsommée)",
-                "Couleur de la cravate : marron (caca)",
-                "Nom des camions dans lesquels nous travaillions (plus ou moins)",
-                "Grade du commandant du camp",
-                "Chanson de la troupe ",
-                "Nom officiel des soldats que nous étions",
-                "Nom militaire du facteur"
-            ],
-            "answers": [
-                "Cidre",
-                "Marron (caca)",
-                "Shelter",
-                "Lieutenant-colonel (Frambourg, il me semble)",
-                "Trompettes d'Haïda",
-                "Transmetteurs",
-                "Vaguemestre"
-            ]
-        },
-        {
-            "id": "travail",
-            "type": "qcm",
-            "time": 25,
-            "question": " Avant de devenir le geek qu'on connait … Eric a-t-il ?",
-            "options": [
-                "Il a été épicier",
-                "Il a travaillé dans l'or",
-                "Il a vendu des bouchons",
-                "Il a vécu dans une communauté hippie"
-            ],
-            "answers": [
-                1,
-                2,
-                3
-            ]
-        },
-        {
-            "id": "deblur",
-            "type": "deblur",
-            "time": 25,
-            "question": "Kékifé sur la photo ?",
-            "options": [
-                "Il est derrière la caméra",
-                "Il prend la pose à côté de la tour de pise",
-                "Il fait un safari",
-                "Il chasse la noix de coco sauvage"
-            ],
-            "answers": [
-                4
-            ]
-        },
-        {
-            "id": "deblur",
-            "type": "deblur",
-            "time": 25,
-            "question": "Kékifé sur la photo ?",
-            "options": [
-                "Il prépare un concours de natation",
-                "Il cherche ses lunettes de soleil",
-                "De la musculation assistée",
-                "On sait pas mais c'est mignon"
-            ],
-            "answers": [
-                1,
-                2,
-                3,
-                4
-            ]
-        },
-        {
-            "id": "perfectmatch",
-            "type": "perfectmatch",
-            "time": 30,
-            "question": "Eric peut revenir dans le temps pour assister à un concert de son choix, lequel choisit-il ?",
-            "options": [
-                "The Beatles",
-                "Yves Montand",
-                "Bernard Minet",
-                "Georges Brassens"
-            ]
-        },
-        {
-            "id": "photos",
-            "type": "qcm",
-            "time": 30,
-            "question": "La ou lesquelles de ces photos sont prises par Eric ?",
-            "options": [
-                "Castafiore",
-                "Le Chardon, c'est vachement bon !",
-                "Dîner en famille",
-                "Clair de Lune"
-            ],
-            "answers": [
-                2,
-                3,
-                4
-            ]
-        },
-        {
-            "id": "outro",
-            "type": "media",
-            "time": 12,
-            "question": "Thanks for playing!",
-            "media": {
-                "kind": "video",
-                "src": "intro.mp4",
-                "autoplay": true,
-                "muted": false,
-                "controls": false
-            }
-        }
-    ]
+	"questionTypes": {
+		"media": "Media Interlude",
+		"qcm": "QCM",
+		"deblur": "Deblur the Image Question",
+		"comparison": "Comparison Question",
+		"sorting": "Sorting Question",
+		"estimate": "Estimation Question",
+		"fastFingers": "Fast Fingers Question",
+		"maplocation": "Map Location Question",
+		"draw": "Draw the Answer Question",
+		"perfectmatch": "Perfect Match Question",
+		"karaoke": "Karaoke Interlude"
+	},
+	"questions": [
+		{
+			"id": "intro",
+			"type": "media",
+			"noreading": true,
+			"question": "Intro",
+			"media": {
+				"kind": "video",
+				"src": "intro.mp4",
+				"autoplay": true,
+				"muted": false,
+				"controls": false
+			}
+		},
+		{
+			"id": "age_tontons",
+			"type": "qcm",
+			"time": 30,
+			"introSound": "engine.wav",
+			"question": "Quel âge avait Eric lors de la sortie des Tontons Flingueurs ?",
+			"options": ["Il n'était pas né", "7 ans", "15 ans", "35 ans, il a même joué dedans"],
+			"answers": [2]
+		},
+		{
+			"id": "cadillac",
+			"type": "qcm",
+			"question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
+			"options": [
+				"Le Redoutable, célèbre sous-marin nucléaire Français",
+				"Une Audi A4 qui n'est pas tombée en panne (exemplaire unique au monde)",
+				"Le transsibérien. C'était froid, mais c'était beau.",
+				"La Cadillac rose de ses rêves"
+			],
+			"answers": [4]
+		},
+		{
+			"id": "autographe",
+			"introSound": "engine.wav",
+			"vibration": [50, 500, 50, 100, 50, 100, 1000],
+			"type": "qcm",
+			"question": "J'ai déjà signé des autographes en tant que...",
+			"options": [
+				"Alain (de loin)",
+				"Robert Redford (mais plutôt Robert que Redford)",
+				"Pierre Richard",
+				"Pierre Niney"
+			],
+			"answers": [3]
+		},
+		{
+			"id": "evenements",
+			"type": "sorting",
+			"question": "Classez ces événements dans l'ordre chronologique",
+			"options": [
+				"Son mariage avec Fabienne",
+				"Son brevet de pilote",
+				"La sortie de son film \"Le Grand Blond avec une chaussure noire\"",
+				"Le déménagement à St-Philbert-des-Champs"
+			],
+			"answers": [3, 1, 2, 4]
+		},
+		{
+			"id": "antonio",
+			"type": "qcm",
+			"question": "Une raclette sans fromage c'est comme une bibliothèque sans...",
+			"options": ["Francisco", "Antonio", "Gepetto", "Robert"],
+			"answers": [2]
+		},
+		{
+			"id": "db2",
+			"type": "qcm",
+			"time": 25,
+			"question": "Problème Electrique : ca a l'air d'être un problème dans la base de données.. seul Eric peut nous sauver ! Mais quelle est donc cette technologie ?",
+			"options": ["DBZ", "DB2", "R2D2", "H2G2"],
+			"answers": [2]
+		},
+		{
+			"id": "magazine",
+			"type": "qcm",
+			"time": 25,
+			"question": ["Eric a été célèbre pour sa passion pour..."],
+			"options": ["Les Corn Flakes", "Les arts martiaux", "Les trucs de geek", "Lui-même"],
+			"answers": [3]
+		},
+		{
+			"id": "voler",
+			"type": "qcm",
+			"time": 25,
+			"question": "Eric aimer voler...",
+			"options": [
+				"Il est incapable de résister à piquer de menus objets souvenirs dans les restaurants",
+				"Il a fait du parapente",
+				"Il a piloté des avions",
+				"Il pratique le Wingsuit"
+			],
+			"answers": [2, 3]
+		},
+		{
+			"id": "continent",
+			"type": "qcm",
+			"time": 25,
+			"question": "Le ou lesquels de ces continents Eric n'a jamais visité ?",
+			"options": [
+				"Afrique",
+				"Amérique du Nord",
+				"Amérique du Sud",
+				"Australie / Océanie",
+				"Asie",
+				"Antarctique",
+				"Europe"
+			],
+			"answers": [3, 6]
+		},
+		{
+			"id": "militaire",
+			"type": "burger",
+			"time": 25,
+			"question": "Questions militaires",
+			"options": [
+				"Boisson favorite (et surconsommée)",
+				"Couleur de la cravate : marron (caca)",
+				"Nom des camions dans lesquels nous travaillions (plus ou moins)",
+				"Grade du commandant du camp",
+				"Chanson de la troupe ",
+				"Nom officiel des soldats que nous étions",
+				"Nom militaire du facteur"
+			],
+			"answers": [
+				"Cidre",
+				"Marron (caca)",
+				"Shelter",
+				"Lieutenant-colonel (Frambourg, il me semble)",
+				"Trompettes d'Haïda",
+				"Transmetteurs",
+				"Vaguemestre"
+			]
+		},
+		{
+			"id": "travail",
+			"type": "qcm",
+			"time": 25,
+			"question": " Avant de devenir le geek qu'on connait … Eric a-t-il ?",
+			"options": [
+				"Il a été épicier",
+				"Il a travaillé dans l'or",
+				"Il a vendu des bouchons",
+				"Il a vécu dans une communauté hippie"
+			],
+			"answers": [1, 2, 3]
+		},
+		{
+			"id": "deblur",
+			"type": "deblur",
+			"time": 25,
+			"question": "Kékifé sur la photo ?",
+			"options": [
+				"Il est derrière la caméra",
+				"Il prend la pose à côté de la tour de pise",
+				"Il fait un safari",
+				"Il chasse la noix de coco sauvage"
+			],
+			"answers": [4]
+		},
+		{
+			"id": "deblur",
+			"type": "deblur",
+			"time": 25,
+			"question": "Kékifé sur la photo ?",
+			"options": [
+				"Il prépare un concours de natation",
+				"Il cherche ses lunettes de soleil",
+				"De la musculation assistée",
+				"On sait pas mais c'est mignon"
+			],
+			"answers": [1, 2, 3, 4]
+		},
+		{
+			"id": "perfectmatch",
+			"type": "perfectmatch",
+			"time": 30,
+			"question": "Eric peut revenir dans le temps pour assister à un concert de son choix, lequel choisit-il ?",
+			"options": ["The Beatles", "Yves Montand", "Bernard Minet", "Georges Brassens"]
+		},
+		{
+			"id": "photos",
+			"type": "qcm",
+			"time": 30,
+			"question": "La ou lesquelles de ces photos sont prises par Eric ?",
+			"options": [
+				"Castafiore",
+				"Le Chardon, c'est vachement bon !",
+				"Dîner en famille",
+				"Clair de Lune"
+			],
+			"answers": [2, 3, 4]
+		},
+		{
+			"id": "karaoke_birthday",
+			"type": "karaoke",
+			"question": "Karaoke surprise",
+			"karaoke": {
+				"title": "Happy Birthday Eric",
+				"artist": "Famille et amis",
+				"audio": "karaoke/karaoke.mp3",
+				"lyrics": "karaoke/karaoke.json"
+			}
+		},
+		{
+			"id": "outro",
+			"type": "media",
+			"time": 12,
+			"question": "Thanks for playing!",
+			"media": {
+				"kind": "video",
+				"src": "intro.mp4",
+				"autoplay": true,
+				"muted": false,
+				"controls": false
+			}
+		}
+	]
 }

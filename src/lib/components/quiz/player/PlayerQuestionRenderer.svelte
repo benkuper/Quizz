@@ -1,20 +1,23 @@
 <script lang="ts">
-	import type { QuizQuestion } from '$lib/quiz/types';
+	import type { GameStatus, KaraokePlaybackSync, QuizQuestion } from '$lib/quiz/types';
 	import QcmQuestion from './types/QcmQuestion.svelte';
 	import EstimateQuestion from './types/EstimateQuestion.svelte';
 	import FastFingersQuestion from './types/FastFingersQuestion.svelte';
 	import SortingQuestion from './types/SortingQuestion.svelte';
 	import MediaQuestion from './types/MediaQuestion.svelte';
+	import KaraokeQuestion from './types/KaraokeQuestion.svelte';
 	import VrWhackQuestion from './types/VrWhackQuestion.svelte';
 
 	type Props = {
+		status: GameStatus;
 		question: QuizQuestion | undefined;
+		karaokeSync?: KaraokePlaybackSync;
 		value: unknown;
 		onChange: (next: unknown) => void;
 		onAutoSubmit?: (payload: unknown) => void;
 	};
 
-	let { question, value, onChange, onAutoSubmit }: Props = $props();
+	let { status, question, karaokeSync, value, onChange, onAutoSubmit }: Props = $props();
 
 	const type = $derived(String(question?.type || ''));
 </script>
@@ -41,6 +44,8 @@
 		<SortingQuestion question={question as any} value={value as any} onChange={onChange as any} />
 	{:else if type === 'media'}
 		<MediaQuestion question={question as any} />
+	{:else if type === 'karaoke'}
+		<KaraokeQuestion {status} question={question as any} sync={karaokeSync} />
 	{:else if type === 'vrwhack'}
 		<VrWhackQuestion
 			question={question as any}

@@ -1,46 +1,59 @@
 <script lang="ts">
-	import { createQuizSocket } from '$lib/partykit/client.svelte';
-	import { urlState } from '$lib/url.svelte';
+	import { base } from '$app/paths';
+	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
+	function appPath(path: string) {
+		const normalized = path.startsWith('/') ? path : `/${path}`;
+		return typeof window === 'undefined'
+			? `${base || '.'}${normalized}`
+			: resolveAppAssetUrl(normalized);
+	}
+
+	function getPhoneSrc(index: number) {
+		const params = new URLSearchParams({
+			playerId: `phone-${index}`,
+			name: `Super Phone ${index}`
+		});
+		return `${appPath('/')}?${params.toString()}`;
+	}
 </script>
 
-{#if urlState.baseUrl === ''}
-	<p>Loading...</p>
-{:else}
-	<main class="allviews">
-		<div class="left">
-			<iframe
-				title="Projector View"
-				class="panel-iframe"
-				src="{urlState.basePath}/projector"
-				width="1920"
-				height="1080"
-			></iframe>
-		</div>
+<main class="allviews">
+	<div class="left">
+		<iframe
+			title="Projector View"
+			class="panel-iframe"
+			src={appPath('/projector')}
+			width="1920"
+			height="1080"
+		></iframe>
+	</div>
 
-		<div class="right">
-			<div class="top">
-				<iframe title="Admin View" class="panel-iframe" src="{urlState.basePath}/admin"></iframe>
-			</div>
-			<div class="bottom">
-				{#each [1, 2] as i}
-					<div class="phone-frame">
-						<div class="phone-header">Phone {i}</div>
-						<div class="device-wrap">
-							<iframe
-								title="Phone {i}"
-								class="phone-iframe"
-								src="{urlState.basePath}/?playerId=phone-{i}&name=Super%20Phone%20{i}"
-								width="1080"
-								height="1920"
-							></iframe>
-						</div>
-					</div>
-				{/each}
-			</div>
+	<div class="right">
+		<div class="top">
+			<iframe title="Admin View" class="panel-iframe" src={appPath('/admin')}></iframe>
 		</div>
-	</main>
-{/if}
+		<div class="bottom">
+			{#each [1, 2] as i}
+				<div
+					class="phone-frame"
+					style={`background-image:url("${appPath('/phone_placeholder.png')}")`}
+				>
+					<div class="phone-header">Phone {i}</div>
+					<div class="device-wrap">
+						<iframe
+							title="Phone {i}"
+							class="phone-iframe"
+							src={getPhoneSrc(i)}
+							width="1080"
+							height="1920"
+						></iframe>
+					</div>
+				</div>
+			{/each}
+		</div>
+	</div>
+</main>
 
 <style>
 	:global(body) {
@@ -96,7 +109,6 @@
 		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 		box-sizing: border-box;
 		min-height: 0;
-		background-image: url('/phone_placeholder.png');
 		background-color: #000000;
 		background-repeat: no-repeat;
 		background-position: center;
@@ -140,5 +152,4 @@
 		background: transparent;
 		display: block;
 	}
-	
 </style>

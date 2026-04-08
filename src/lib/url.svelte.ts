@@ -1,46 +1,30 @@
 import { browser } from '$app/environment';
+import {
+	getAppBasePath,
+	getAppBaseUrl,
+	resolveAppAbsoluteUrl,
+	resolveAppAssetUrl
+} from '$lib/utils/paths.svelte';
 
-export const urlState = $state(
-    {
-        basePath: '',
-        baseUrl: '',
-        mediaPath: ''
-    }
-);
+export const urlState = $state({
+	basePath: getAppBasePath(),
+	baseUrl: '',
+	mediaPath: resolveAppAssetUrl('/media')
+});
 
 $effect.root(() => {
-    $effect(() => {
-        if (!browser) return;
-        if (urlState.baseUrl) return; // guard to run only once
+	$effect(() => {
+		if (!browser) return;
 
-
-        const pathname = location.pathname;
-        const pathsplit = pathname.split('/');
-        pathsplit.pop(); // remove last segment (page)
-        pathsplit.pop();
-        let prefix = pathsplit.join('/');
-        // normalize prefix
-        if (prefix !== '/' && prefix.endsWith('/')) prefix = prefix.slice(0, -1);
-
-        if (prefix === '' || prefix === '/') {
-            urlState.basePath = '';
-            urlState.baseUrl = location.origin;
-        } else {
-            urlState.basePath = prefix;
-            urlState.baseUrl = `${location.origin}${prefix}`;
-        }
-        urlState.mediaPath = `${urlState.baseUrl}/media`;
-
-        console.log('Determined basePath pop pop:', urlState.basePath);
-        console.log('Determined baseUrl:', urlState.baseUrl);
-    });
-    return () => { };
+		urlState.basePath = getAppBasePath();
+		urlState.baseUrl = getAppBaseUrl();
+		urlState.mediaPath = resolveAppAbsoluteUrl('/media');
+	});
+	return () => {};
 });
 
 export function getMedia(path: string) {
-    if (browser) {
-        return `${urlState.mediaPath}/${path}`;
-    } else {
-        return `/media/${path}`;
-    }
+	const trimmed = path.trim();
+	if (!trimmed) return '';
+	return resolveAppAssetUrl(trimmed.startsWith('/') ? trimmed : `/media/${trimmed}`);
 }

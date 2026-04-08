@@ -27,14 +27,16 @@
 
 	const sortedPlayers = $derived.by(() =>
 		gameState?.players
-			? [...(Object.values(gameState.players) as any[])].sort(
+			? [...(Object.values(gameState.players) as any[])].filter((player: any) => player.enabled).sort(
 					(a: any, b: any) => (b?.score ?? 0) - (a?.score ?? 0)
 				)
 			: []
 	);
 
 	const playersList = $derived.by(() =>
-		gameState?.players ? (Object.values(gameState.players) as any[]) : []
+		gameState?.players
+			? (Object.values(gameState.players) as any[]).filter((player: any) => player.enabled)
+			: []
 	);
 	const correctPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === true));
 	const wrongPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === false));
@@ -170,6 +172,12 @@
 				}
 				break;
 
+			case 'reveal':
+				sign1Text = 'REPONSES';
+				sign2Text = 'UNE';
+				sign3Text = 'PAR UNE';
+				break;
+
 			case 'review':
 				{
 					let best3Players = sortedPlayers.slice(0, 3);
@@ -228,7 +236,7 @@
 		/>
 	</div>
 
-	<div class="status-bar {gameState?.status === 'lobby' ? 'hidden' : ''}">
+	<div class="status-bar">
 		<!-- <div class="status-left">
 			<span class="status-dot" class:live={!!socket}></span>
 		</div> -->
@@ -429,11 +437,9 @@
 		transition: transform 240ms ease-in-out;
 	}
 
-	.status-bar.hidden {
-		transform: translateY(100%);
-	}
-
 	.status-bar .players {
+		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 1rem;
 		flex-grow: 1;

@@ -5,6 +5,7 @@
 		status?: string;
 		players?: Record<string, any>;
 		question?: any;
+		optionReveal?: any;
 		roundSummary?: any;
 		answerCount?: number;
 		timer?: number;
@@ -47,9 +48,14 @@
 				{/if}
 			</div>
 
-			<p class="count">Players: {Object.keys(gameState.players || {}).length}</p>
+			<p class="count">
+				Teams ready:
+				{Object.values(gameState.players || {}).filter((player: any) => player.enabled).length}
+				· Connected:
+				{Object.values(gameState.players || {}).filter((player: any) => player.enabled && player.connected).length}
+			</p>
 		</div>
-	{:else if gameState.status === 'reading' || gameState.status === 'question' || gameState.status === 'review'}
+	{:else if gameState.status === 'reading' || gameState.status === 'question' || gameState.status === 'reveal' || gameState.status === 'review'}
 		<div class="{gameState.status}-view">
 			<ProjectorQuestionRenderer
 				status={gameState.status}
@@ -58,6 +64,7 @@
 					serverNow: gameState.serverNow ?? null,
 					questionStartedAt: gameState.questionStartedAt ?? null
 				}}
+				optionReveal={gameState.optionReveal}
 				roundSummary={gameState.roundSummary}
 				{onPassiveFinished}
 			/>

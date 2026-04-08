@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { GameStatus, KaraokePlaybackSync, QuizQuestion } from '$lib/quiz/types';
+	import type { GameStatus, KaraokePlaybackSync, QuizQuestion, OptionRevealState } from '$lib/quiz/types';
 	import QcmView from './types/QcmView.svelte';
 	import SortingView from './types/SortingView.svelte';
 	import EstimateView from './types/EstimateView.svelte';
@@ -14,11 +14,12 @@
 		status: GameStatus;
 		question: QuizQuestion | undefined;
 		karaokeSync?: KaraokePlaybackSync;
+		optionReveal?: OptionRevealState;
 		roundSummary?: any;
 		onPassiveFinished?: () => void;
 	};
 
-	let { status, question, karaokeSync, roundSummary, onPassiveFinished }: Props = $props();
+	let { status, question, karaokeSync, optionReveal, roundSummary, onPassiveFinished }: Props = $props();
 	const type = $derived(String(question?.type || ''));
 
 	function text(q: QuizQuestion) {
@@ -34,10 +35,12 @@
 			<h2 class="q-text">{text(question)}</h2>
 			<QuestionImageStrip questionId={question.id} />
 		{/if}
-		{#if type === 'qcm'}
-			<QcmView {status} question={question as any} />
+		{#if status === 'reading'}
+			<div class="reading-spacer"></div>
+		{:else if type === 'qcm'}
+			<QcmView {status} question={question as any} {optionReveal} />
 		{:else if type === 'sorting'}
-			<SortingView {status} question={question as any} />
+			<SortingView {status} question={question as any} {optionReveal} />
 		{:else if type === 'estimate'}
 			<EstimateView {status} question={question as any} summary={roundSummary?.estimate} />
 		{:else if type === 'fastFingers'}
@@ -77,6 +80,11 @@
 	.q-text {
 		margin-top: 1rem;
 		text-align: center;
+		max-width: 88%;
+	}
+
+	.reading-spacer {
+		height: 1rem;
 	}
 
 	:global {

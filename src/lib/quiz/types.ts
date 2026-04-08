@@ -1,9 +1,10 @@
-export type GameStatus = 'lobby' | 'reading' | 'question' | 'review' | 'leaderboard' | 'finished';
+export type GameStatus = 'lobby' | 'reading' | 'question' | 'reveal' | 'review' | 'leaderboard' | 'finished';
 
 export type QuizQuestionBase = {
 	id: string;
 	type: string;
 	question: string | string[];
+	separateReveal?: boolean;
 	// Optional audio cue played on players' phones when the question appears.
 	// Recommended: a relative URL like "media/my-sound.mp3" so subfolder deploys work.
 	introSound?: string;
@@ -148,6 +149,7 @@ export type PlayerView = {
 	id: string;
 	name: string;
 	score: number;
+	enabled: boolean;
 	connected: boolean;
 	lastSeen: number;
 	answered: boolean;
@@ -157,16 +159,25 @@ export type PlayerView = {
 	lastPoints: number | null;
 };
 
+export type OptionRevealState = {
+	placedOptionIndexes: number[];
+	focusedOptionIndex: number | null;
+	totalOptions: number;
+};
+
 export type BroadcastState = {
 	status: GameStatus;
 	questionIndex: number;
+	actualQuestionIndex?: number;
 	question?: QuizQuestion;
 	totalQuestions: number;
+	totalActualQuestions?: number;
 	timer: number;
 	serverNow?: number;
 	questionStartedAt?: number | null;
 	players: Record<string, PlayerView>;
 	answerCount: number;
+	optionReveal?: OptionRevealState;
 	roundSummary?: {
 		estimate?: {
 			unit?: EstimateUnit;

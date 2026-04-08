@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { base } from '$app/paths';
-	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
+	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
+	import { urlState } from '$lib/url.svelte';
 
 	function appPath(path: string) {
 		const normalized = path.startsWith('/') ? path : `/${path}`;
@@ -33,21 +33,24 @@
 		<div class="top">
 			<iframe title="Admin View" class="panel-iframe" src={appPath('/admin')}></iframe>
 		</div>
-		<div class="bottom">
-			{#each [1, 2] as i}
-				<div
-					class="phone-frame"
-					style={`background-image:url("${appPath('/phone_placeholder.png')}")`}
-				>
-					<div class="phone-header">Phone {i}</div>
-					<div class="device-wrap">
-						<iframe
-							title="Phone {i}"
-							class="phone-iframe"
-							src={getPhoneSrc(i)}
-							width="1080"
-							height="1920"
-						></iframe>
+
+		<div class="right">
+			<div class="top">
+				<iframe title="Admin View" class="panel-iframe" src="{urlState.basePath}/admin"></iframe>
+			</div>
+			<div class="bottom">
+				{#each TEAM_DEFINITIONS.slice(0, 2) as team, index}
+					<div class="phone-frame">
+						<div class="phone-header">{team.name}</div>
+						<div class="device-wrap">
+							<iframe
+								title={team.name}
+								class="phone-iframe"
+								src="{urlState.basePath}/?teamId={encodeURIComponent(team.id)}"
+								width="1080"
+								height="1920"
+							></iframe>
+						</div>
 					</div>
 				</div>
 			{/each}

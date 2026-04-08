@@ -45,7 +45,12 @@
 				{/if}
 			</div>
 
-			<p class="count">Players: {Object.keys(gameState.players || {}).length}</p>
+			<p class="count">
+				Teams ready:
+				{Object.values(gameState.players || {}).filter((player: any) => player.enabled).length}
+				· Connected:
+				{Object.values(gameState.players || {}).filter((player: any) => player.enabled && player.connected).length}
+			</p>
 		</div>
 	{:else if gameState.status === 'reading' || gameState.status === 'question' || gameState.status === 'review'}
 		<div class="{gameState.status}-view">

@@ -118,6 +118,7 @@ export type PlayerView = {
 	id: string;
 	name: string;
 	score: number;
+	enabled: boolean;
 	connected: boolean;
 	lastSeen: number;
 	answered: boolean;
@@ -130,8 +131,10 @@ export type PlayerView = {
 export type BroadcastState = {
 	status: GameStatus;
 	questionIndex: number;
+	actualQuestionIndex?: number;
 	question?: QuizQuestion;
 	totalQuestions: number;
+	totalActualQuestions?: number;
 	timer: number;
 	players: Record<string, PlayerView>;
 	answerCount: number;

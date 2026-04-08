@@ -1,4 +1,11 @@
 {
+    "teams":
+    {
+        "team1": "Team 1",
+        "goodteam": "La bonne équipe",
+        "team3": "Team 3",
+        "superteam": "La super équipe"
+    },
     "questionTypes": {
         "media": "Media Interlude",
         "qcm": "QCM",

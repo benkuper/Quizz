@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createQuizSocket } from '$lib/partykit/client.svelte';
+	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
 	import { urlState } from '$lib/url.svelte';
 
 </script>
@@ -23,14 +23,14 @@
 				<iframe title="Admin View" class="panel-iframe" src="{urlState.basePath}/admin"></iframe>
 			</div>
 			<div class="bottom">
-				{#each [1, 2] as i}
+				{#each TEAM_DEFINITIONS.slice(0, 2) as team, index}
 					<div class="phone-frame">
-						<div class="phone-header">Phone {i}</div>
+						<div class="phone-header">{team.name}</div>
 						<div class="device-wrap">
 							<iframe
-								title="Phone {i}"
+								title={team.name}
 								class="phone-iframe"
-								src="{urlState.basePath}/?playerId=phone-{i}&name=Super%20Phone%20{i}"
+								src="{urlState.basePath}/?teamId={encodeURIComponent(team.id)}"
 								width="1080"
 								height="1920"
 							></iframe>

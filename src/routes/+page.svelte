@@ -3,6 +3,8 @@
 	import { fade, fly } from 'svelte/transition';
 	import PlayerQuestionRenderer from '$lib/components/quiz/player/PlayerQuestionRenderer.svelte';
 	import QcmQuestion from '$lib/components/quiz/player/types/QcmQuestion.svelte';
+	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
+	import { getTeamBadgeUrl } from '$lib/quiz/teamAssets';
 	import type { BroadcastState, QuizQuestion } from '$lib/quiz/types';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { HAPTICS, vibrate, type VibrationPattern } from '$lib/config/haptics.svelte';
@@ -12,13 +14,13 @@
 
 	let socket: PartySocket | null = $state(null);
 	let connected = $state(false);
-	let playerId: string | null = $state(null);
 	let gameState: any = $state(null);
 
 	let joined = $state(false);
-	let username = $state('');
-	let hasEverJoined = $state(false);
-	let lastAutoRejoinAt = 0;
+	let selectedTeamId: string | null = $state(null);
+	let joiningTeamId: string | null = $state(null);
+	let joinError = $state('');
+	let missingBadgeIds = $state([] as string[]);
 
 	let pingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -79,15 +81,37 @@
 
 	// if question is media, we enter "contemplate" mode (no UI)
 	let contemplateMode = $derived(gameState?.question?.type === 'media');
+	const selectedTeam = $derived.by(() => {
+		if (selectedTeamId && gameState?.players?.[selectedTeamId]) {
+			return gameState.players[selectedTeamId];
+		}
+
+		return TEAM_DEFINITIONS.find((team) => team.id === selectedTeamId) ?? null;
+	});
+	const enabledTeams = $derived.by(() => {
+		if (gameState?.players) {
+			return Object.values(gameState.players).filter((team: any) => team.enabled);
+		}
+
+		return TEAM_DEFINITIONS.map((team) => ({
+			...team,
+			enabled: true,
+			connected: false,
+			score: 0
+		}));
+	});
+	const availableTeams = $derived.by(() =>
+		enabledTeams.filter((team: any) => !team.connected)
+	);
 
 	const myScore = $derived(
-		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.score) ?? 0
+		(selectedTeamId && (gameState as BroadcastState | null)?.players?.[selectedTeamId]?.score) ?? 0
 	);
 	const myLastCorrect = $derived(
-		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.lastCorrect) ?? null
+		(selectedTeamId && (gameState as BroadcastState | null)?.players?.[selectedTeamId]?.lastCorrect) ?? null
 	);
 	const myLastPoints = $derived(
-		(playerId && (gameState as BroadcastState | null)?.players?.[playerId]?.lastPoints) ?? null
+		(selectedTeamId && (gameState as BroadcastState | null)?.players?.[selectedTeamId]?.lastPoints) ?? null
 	);
 	const q = $derived(
 		((gameState as BroadcastState | null)?.question as QuizQuestion | undefined) ?? undefined
@@ -143,37 +167,58 @@
 		return 'none';
 	});
 
-	function getOrCreatePlayerId() {
+	function getOrCreateClientId() {
 		try {
-			const stored = localStorage.getItem('quizz:playerId');
+			const stored = localStorage.getItem('quizz:clientId');
 			if (stored) return stored;
 
 			const created =
 				typeof crypto !== 'undefined' && 'randomUUID' in crypto
 					? crypto.randomUUID()
 					: `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-			localStorage.setItem('quizz:playerId', created);
+			localStorage.setItem('quizz:clientId', created);
 			return created;
 		} catch {
 			return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 		}
 	}
 
-	function loadName() {
+	function loadSelectedTeam() {
 		try {
-			const stored = localStorage.getItem('quizz:name');
-			if (stored) username = stored;
+			const stored = localStorage.getItem('quizz:teamId');
+			if (stored) selectedTeamId = stored;
 		} catch {
 			// ignore
 		}
 	}
 
-	function saveName() {
+	function saveSelectedTeam(teamId: string) {
 		try {
-			localStorage.setItem('quizz:name', username);
+			localStorage.setItem('quizz:teamId', teamId);
 		} catch {
 			// ignore
 		}
+	}
+
+	function clearSelectedTeam() {
+		selectedTeamId = null;
+		joiningTeamId = null;
+		joined = false;
+		try {
+			localStorage.removeItem('quizz:teamId');
+		} catch {
+			// ignore
+		}
+	}
+
+	function markBadgeMissing(teamId: string) {
+		if (missingBadgeIds.includes(teamId)) return;
+		missingBadgeIds = [...missingBadgeIds, teamId];
+	}
+
+	function teamBadgeUrl(teamId: string) {
+		if (missingBadgeIds.includes(teamId)) return null;
+		return getTeamBadgeUrl(teamId);
 	}
 
 	function resetAnswerUi() {
@@ -184,18 +229,16 @@
 
 	function ensureJoined() {
 		if (!socket || !connected) return;
-		if (!username.trim()) return;
-		if (!playerId) playerId = getOrCreatePlayerId();
-		socket.send(JSON.stringify({ type: 'join', playerId, name: username.trim() }));
-		hasEverJoined = true;
+		if (!selectedTeamId) return;
+		getOrCreateClientId();
+		socket.send(JSON.stringify({ type: 'join', teamId: selectedTeamId }));
 	}
 
 	function startPings() {
 		stopPings();
 		pingInterval = setInterval(() => {
 			if (!socket || !connected) return;
-			// only ping once the user is (or tries to be) joined
-			if (!playerId) return;
+			if (!selectedTeamId || !joined) return;
 			socket.send(JSON.stringify({ type: 'ping' }));
 		}, 5_000);
 	}
@@ -208,35 +251,33 @@
 	}
 
 	$effect(() => {
-		loadName();
+		loadSelectedTeam();
 
-		// Allow auto-joining when `playerId` and/or `name` are provided in the URL (used by /allviews iframes)
+		// Allow auto-joining when `teamId` is provided in the URL (used by /allviews iframes)
 		const params =
 			typeof location !== 'undefined'
 				? new URLSearchParams(location.search)
 				: new URLSearchParams();
-		const paramPid = params.get('playerId');
-		const paramName = params.get('name');
-		if (paramName) username = paramName;
-		if (paramPid) {
-			playerId = paramPid;
-		} else {
-			playerId = getOrCreatePlayerId();
+		const paramTeamId = params.get('teamId');
+		if (paramTeamId) {
+			selectedTeamId = paramTeamId;
+			saveSelectedTeam(paramTeamId);
 		}
+		getOrCreateClientId();
 
 		const s = createQuizSocket();
 		socket = s;
 
 		s.onopen = () => {
 			connected = true;
-			// If URL supplied playerId/name, try to auto-join. Otherwise, join only when user picks a name.
-			if (paramPid || username.trim()) ensureJoined();
+			if (selectedTeamId) ensureJoined();
 			startPings();
 		};
 
 		s.onclose = () => {
 			connected = false;
 			joined = false;
+			joiningTeamId = null;
 			stopPings();
 		};
 
@@ -247,15 +288,46 @@
 				return;
 			}
 
+			if (msg.type === 'join_ok') {
+				joined = true;
+				joiningTeamId = null;
+				joinError = '';
+				return;
+			}
+
+			if (msg.type === 'join_rejected') {
+				joiningTeamId = null;
+				joined = false;
+				joinError =
+					msg.reason === 'occupied'
+						? 'This team is already connected on another device.'
+						: msg.reason === 'disabled'
+							? 'This team is currently disabled by the admin.'
+							: 'This team is no longer available.';
+				clearSelectedTeam();
+				return;
+			}
+
 			if (msg.type === 'state') {
 				const prevQid = gameState?.question?.id;
 				gameState = msg.data as BroadcastState;
+				const currentTeam = selectedTeamId ? gameState?.players?.[selectedTeamId] : null;
+				const becamePresent = Boolean(currentTeam?.connected) && !joined;
 
-				// Consider us joined only if the server state actually contains our playerId.
-				const presentNow = Boolean(playerId && gameState?.players?.[playerId]);
-				const becamePresent = presentNow && !joined;
-				joined = presentNow;
-				if (presentNow) hasEverJoined = true;
+				if (selectedTeamId && !currentTeam) {
+					clearSelectedTeam();
+					joinError = 'This team is no longer part of the game.';
+				}
+
+				if (selectedTeamId && currentTeam && !currentTeam.enabled) {
+					clearSelectedTeam();
+					joinError = 'This team was disabled by the admin.';
+				}
+
+				if (joined && selectedTeamId && currentTeam && !currentTeam.connected) {
+					clearSelectedTeam();
+					joinError = 'Team assignment reset. Please choose a team again.';
+				}
 
 				// If we just (re)joined while a question is already active, play the intro sound for
 				// this question as well (useful after kicks / reconnects).
@@ -272,16 +344,6 @@
 					const qIndex = Number((msg.data as any)?.questionIndex ?? -1);
 					if (status === 'question' && introSound.trim() && qid) {
 						requestIntroSoundPlay(introSound, `question:${qIndex}:${qid}`);
-					}
-				}
-
-				// If the admin removed us while we stayed connected, automatically re-join
-				// using the stored name (so the user doesn't have to retype it).
-				if (!presentNow && hasEverJoined && connected && socket && username.trim()) {
-					const now = Date.now();
-					if (now - lastAutoRejoinAt > 1_500) {
-						lastAutoRejoinAt = now;
-						ensureJoined();
 					}
 				}
 
@@ -379,11 +441,12 @@
 		prevQuestionId = qid;
 	});
 
-	function joinGame() {
-		if (!username.trim()) return;
-		saveName();
+	function joinGame(teamId: string) {
+		selectedTeamId = teamId;
+		joiningTeamId = teamId;
+		joinError = '';
+		saveSelectedTeam(teamId);
 		ensureJoined();
-		joined = true;
 	}
 
 	function submitAnswer(payload: any) {
@@ -493,7 +556,12 @@
 						{isFullscreen ? 'Exit' : 'Fullscreen'}
 					</button>
 				{/if}
-				<div class="text-sm font-semibold">{myScore} pts</div>
+				<div class="text-right text-sm">
+					{#if selectedTeam}
+						<div class="font-semibold">{selectedTeam.name}</div>
+					{/if}
+					<div class="font-semibold">{myScore} pts</div>
+				</div>
 			</div>
 		</header>
 
@@ -503,39 +571,70 @@
 			{:else if !gameState}
 				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Loading…</div>
 			{:else if !joined}
-				<section class="rounded-2xl bg-slate-900 p-5" in:fade>
-					<h2 class="text-xl font-semibold">Join the game</h2>
-					<p class="mt-1 text-sm text-slate-300">Pick a nickname (max 12 chars).</p>
-					<form
-						class="mt-4 space-y-3"
-						onsubmit={(e) => {
-							e.preventDefault();
-							joinGame();
-						}}
-					>
-						<input
-							class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-50 outline-none focus:border-indigo-400"
-							placeholder="Nickname"
-							maxlength="12"
-							bind:value={username}
-							required
-						/>
-						<button
-							class="w-full rounded-xl bg-indigo-500 px-4 py-3 font-semibold text-white active:scale-[0.99] disabled:opacity-60"
-							type="submit"
-							disabled={!username.trim()}
-						>
-							Join
-						</button>
-					</form>
+				<section class="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-5 shadow-2xl shadow-slate-950/40" in:fade>
+					<div class="space-y-1 text-center">
+						<h2 class="text-[1.4rem] font-semibold tracking-[0.02em]">Choose your team</h2>
+						<p class="text-sm text-slate-300">Only teams enabled by the admin and not already connected can join.</p>
+					</div>
+
+					{#if joinError}
+						<p class="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+							{joinError}
+						</p>
+					{/if}
+
+					{#if availableTeams.length > 0}
+						<div class="mt-5 grid gap-3">
+							{#each availableTeams as team (team.id)}
+								<button
+									type="button"
+									class="flex items-center gap-4 rounded-[1.5rem] border border-slate-800 bg-slate-950/80 px-4 py-4 text-left transition hover:border-indigo-400/50 hover:bg-slate-900 disabled:cursor-wait disabled:opacity-60"
+									disabled={Boolean(joiningTeamId)}
+									onclick={() => joinGame(String(team.id))}
+								>
+									<div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-800 bg-slate-900">
+										{#if teamBadgeUrl(String(team.id))}
+											<img
+												src={teamBadgeUrl(String(team.id))!}
+												alt={String(team.name)}
+												class="h-full w-full object-cover"
+												onerror={() => markBadgeMissing(String(team.id))}
+											/>
+										{:else}
+											<div class="text-lg font-black uppercase tracking-[0.18em] text-slate-200">
+												{String(team.name)
+													.split(/\s+/)
+													.slice(0, 2)
+													.map((part) => part[0]?.toUpperCase() ?? '')
+													.join('')}
+											</div>
+										{/if}
+									</div>
+
+									<div class="min-w-0 flex-1">
+										<div class="text-[1.05rem] font-semibold text-slate-50">{team.name}</div>
+										<div class="mt-1 text-sm text-slate-400">Current score: {team.score ?? 0} pts</div>
+									</div>
+
+									<div class="rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">
+										{joiningTeamId === team.id ? 'Joining' : 'Select'}
+									</div>
+								</button>
+							{/each}
+						</div>
+					{:else}
+						<div class="mt-5 rounded-[1.5rem] border border-slate-800 bg-slate-950/80 px-4 py-5 text-center text-sm text-slate-300">
+							No enabled team is currently available. Wait for the admin to enable one or for a connected team to disconnect.
+						</div>
+					{/if}
 				</section>
 			{:else if gameState.status === 'lobby'}
 				<section class="rounded-2xl bg-slate-900 p-5 text-center" in:fade>
 					<div class="text-3xl">⏳</div>
-					<h2 class="mt-2 text-xl font-semibold">Ready, {username}!</h2>
+					<h2 class="mt-2 text-xl font-semibold">Ready, {selectedTeam?.name}!</h2>
 					<p class="mt-1 text-sm text-slate-300">Waiting for the host to start.</p>
 					<div class="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm text-slate-200">
-						{Object.keys(gameState.players || {}).length} player(s) connected
+						{enabledTeams.length} team(s) playing · {enabledTeams.filter((team: any) => team.connected).length} connected
 					</div>
 				</section>
 			{:else if gameState.status == 'question' || gameState.status === 'reading'}

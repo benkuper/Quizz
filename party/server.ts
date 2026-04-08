@@ -1,17 +1,12 @@
 import type * as Party from "partykit/server";
-
-// We import the data. In a real app, you might want to bundle this or fetch it.
-// Assuming relative path works with PartyKit's esbuild setup.
-// If this fails, we might need to move data.json or simple fetch it.
-import data from "../src/lib/assets/data.json";
-
-const QUESTIONS = data.questions;
+import { QUESTIONS, TEAM_DEFINITIONS } from "../src/lib/quiz/config";
 const QCM_OPTION_LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 type Player = {
     id: string;
     name: string;
     score: number;
+    enabled: boolean;
     connected: boolean;
     connId?: string;
     lastSeen: number; // epoch ms
@@ -47,6 +42,22 @@ type GameState = {
     >; // playerId -> latest submission for current question
 };
 
+function createInitialPlayers(): Record<string, Player> {
+    return Object.fromEntries(
+        TEAM_DEFINITIONS.map((team) => [
+            team.id,
+            {
+                id: team.id,
+                name: team.name,
+                score: 0,
+                enabled: true,
+                connected: false,
+                lastSeen: 0
+            }
+        ])
+    );
+}
+
 export default class QuizServer implements Party.Server {
     constructor(readonly room: Party.Room) { }
 
@@ -58,9 +69,9 @@ export default class QuizServer implements Party.Server {
 
     state: GameState = {
         status: 'lobby',
-        questionIndex: 0,
+        questionIndex: -1,
         timer: 0,
-        players: {},
+        players: createInitialPlayers(),
         lastRoundSummary: undefined,
         lastRoundResults: {},
         currentAnswers: {}
@@ -69,6 +80,49 @@ export default class QuizServer implements Party.Server {
     interval: ReturnType<typeof setInterval> | null = null;
     readonly DEFAULT_ROUND_TIME = 20; // seconds
     readonly PRESENCE_TIMEOUT_MS = 25_000;
+
+    private clearPlayerConnection(playerId: string, options: { updateLastSeen?: boolean } = {}) {
+        const player = this.state.players[playerId];
+        if (!player) return;
+
+        player.connected = false;
+        player.connId = undefined;
+        if (options.updateLastSeen !== false) {
+            player.lastSeen = Date.now();
+        }
+
+        delete this.state.currentAnswers[playerId];
+
+        for (const cid of Object.keys(this.connIdToPlayerId)) {
+            if (this.connIdToPlayerId[cid] === playerId) {
+                delete this.connIdToPlayerId[cid];
+            }
+        }
+    }
+
+    private resetAssignments() {
+        for (const player of Object.values(this.state.players)) {
+            player.connected = false;
+            player.connId = undefined;
+            player.lastSeen = Date.now();
+        }
+
+        this.connIdToPlayerId = {};
+        this.state.currentAnswers = {};
+        this.broadcastState();
+    }
+
+    private setTeamEnabled(teamId: string, enabled: boolean) {
+        const player = this.state.players[teamId];
+        if (!player) return;
+
+        player.enabled = enabled;
+        if (!enabled) {
+            this.clearPlayerConnection(teamId);
+        }
+
+        this.broadcastState();
+    }
 
     private ensurePresenceWatchdog() {
         if (this.presenceInterval) return;
@@ -113,9 +167,7 @@ export default class QuizServer implements Party.Server {
         const player = this.state.players[playerId];
         // Only mark disconnected if this close corresponds to the latest connection.
         if (player && player.connId === conn.id) {
-            player.connected = false;
-            player.connId = undefined;
-            player.lastSeen = Date.now();
+            this.clearPlayerConnection(playerId);
             this.broadcastState();
         }
     }
@@ -129,21 +181,36 @@ export default class QuizServer implements Party.Server {
         }
 
         if (event.type === 'join') {
-            const name = String(event.name || '').trim();
-            const playerId = String(event.playerId || '').trim();
-            if (!playerId) return;
+            const teamId = String(event.teamId || '').trim();
+            if (!teamId) return;
 
-            const existing = this.state.players[playerId];
-            this.state.players[playerId] = {
-                id: playerId,
-                name: name || existing?.name || `Player ${playerId.slice(0, 4)}`,
-                score: existing?.score || 0,
-                connected: true,
-                connId: sender.id,
-                lastSeen: Date.now()
-            };
+            const team = this.state.players[teamId];
+            if (!team) {
+                sender.send(JSON.stringify({ type: 'join_rejected', reason: 'unknown_team' }));
+                return;
+            }
 
-            this.connIdToPlayerId[sender.id] = playerId;
+            if (!team.enabled) {
+                sender.send(JSON.stringify({ type: 'join_rejected', reason: 'disabled' }));
+                return;
+            }
+
+            if (team.connected && team.connId !== sender.id) {
+                sender.send(JSON.stringify({ type: 'join_rejected', reason: 'occupied' }));
+                return;
+            }
+
+            const previousTeamId = this.connIdToPlayerId[sender.id];
+            if (previousTeamId && previousTeamId !== teamId) {
+                this.clearPlayerConnection(previousTeamId, { updateLastSeen: false });
+            }
+
+            team.connected = true;
+            team.connId = sender.id;
+            team.lastSeen = Date.now();
+
+            this.connIdToPlayerId[sender.id] = teamId;
+            sender.send(JSON.stringify({ type: 'join_ok', teamId }));
             this.broadcastState();
         }
 
@@ -166,6 +233,16 @@ export default class QuizServer implements Party.Server {
 
         if (event.type === 'admin_reset') {
             this.resetGameToLobby();
+        }
+
+        if (event.type === 'admin_reset_assignments') {
+            this.resetAssignments();
+        }
+
+        if (event.type === 'admin_set_team_enabled') {
+            const teamId = String(event.teamId || '').trim();
+            if (!teamId) return;
+            this.setTeamEnabled(teamId, Boolean(event.enabled));
         }
 
         if (event.type === 'admin_vibrate') {
@@ -232,35 +309,17 @@ export default class QuizServer implements Party.Server {
             const id = String(event.playerId || '').trim();
             if (!id) return;
             if (this.state.players[id]) {
-                delete this.state.players[id];
-                // clean up connId mapping entries pointing to this player
-                for (const cid of Object.keys(this.connIdToPlayerId)) {
-                    if (this.connIdToPlayerId[cid] === id) delete this.connIdToPlayerId[cid];
-                }
+                this.clearPlayerConnection(id);
                 this.broadcastState();
             }
         }
 
         if (event.type === 'admin_remove_offline') {
-            const toRemove: string[] = [];
-            for (const [pid, p] of Object.entries(this.state.players)) {
-                if (!p.connected) toRemove.push(pid);
-            }
-            if (toRemove.length) {
-                for (const id of toRemove) {
-                    delete this.state.players[id];
-                    for (const cid of Object.keys(this.connIdToPlayerId)) {
-                        if (this.connIdToPlayerId[cid] === id) delete this.connIdToPlayerId[cid];
-                    }
-                }
-                this.broadcastState();
-            }
+            this.broadcastState();
         }
 
         if (event.type === 'admin_remove_all') {
-            this.state.players = {};
-            this.connIdToPlayerId = {};
-            this.broadcastState();
+            this.resetAssignments();
         }
 
         if (event.type === 'submit_answer') {
@@ -315,10 +374,6 @@ export default class QuizServer implements Party.Server {
         }
 
         // Keep players connected, but reset game progress and scores.
-        for (const p of Object.values(this.state.players)) {
-            p.score = 0;
-        }
-
         this.state.status = 'lobby';
         this.state.questionIndex = -1;
         this.state.timer = 0;
@@ -686,6 +741,7 @@ export default class QuizServer implements Party.Server {
                 id: p.id,
                 name: p.name,
                 score: p.score,
+                enabled: p.enabled,
                 connected: p.connected,
                 lastSeen: p.lastSeen,
                 answered: Boolean(submission),

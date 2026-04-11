@@ -18,7 +18,7 @@
 	<div class="badge-overlay__halo" aria-hidden="true"></div>
 	<div class="badge-overlay__card" in:fly={{ y: 20, duration: 280 }} out:fly={{ y: -24, duration: 220 }}>
 		<div class="badge-overlay__badge" in:scale={{ start: 0.78, duration: 320 }} out:scale={{ start: 0.88, duration: 180 }}>
-			<TeamBadge teamId={teamId} teamName={teamName} spinMode={spinMode} spinKey={spinKey} spinDuration="4.2s" spinTurns={3} class="badge-overlay__team-badge" />
+			<TeamBadge teamId={teamId} teamName={teamName} spinMode={spinMode} renderMode="flat" spinKey={spinKey} spinDuration="4.2s" spinTurns={3} class="badge-overlay__team-badge" />
 		</div>
 		<div class="badge-overlay__copy">
 			<p class="badge-overlay__title">{title}</p>
@@ -58,8 +58,8 @@
 		border-radius: 2.2rem;
 		background: linear-gradient(180deg, rgba(15, 23, 42, 0.84), rgba(2, 6, 23, 0.94));
 		border: 0.1rem solid rgba(255, 255, 255, 0.14);
-		backdrop-filter: blur(0.9rem);
-		box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.35);
+		box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.28);
+		contain: layout paint;
 	}
 
 	.badge-overlay__badge {

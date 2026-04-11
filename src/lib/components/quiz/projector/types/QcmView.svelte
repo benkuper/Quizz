@@ -6,6 +6,7 @@
 		GameStatus,
 		OptionRevealState,
 		QuizOptionAnswer,
+		QuizQuestionDeblur,
 		QuizQuestionPerfectMatch,
 		QuizQuestionQcm
 	} from '$lib/quiz/types';
@@ -14,12 +15,13 @@
 
 	type Props = {
 		status: GameStatus;
-		question: QuizQuestionQcm | QuizQuestionPerfectMatch;
+		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
 		optionReveal?: OptionRevealState;
 		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
+		layout?: 'grid' | 'sidebar';
 	};
 
-	let { status, question, optionReveal, onFocusImageChange }: Props = $props();
+	let { status, question, optionReveal, onFocusImageChange, layout = 'grid' }: Props = $props();
 	let optionImages = $state<Array<string | null>>([]);
 
 	function completedReveal(totalOptions: number): OptionRevealState {
@@ -98,6 +100,7 @@
 		reveal={resolvedReveal}
 		labels={optionLabels}
 		optionImages={optionImages}
+		{layout}
 		showLabels
 		slotStates={reviewSlotStates}
 		onFocusImageChange={onFocusImageChange}

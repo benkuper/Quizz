@@ -189,13 +189,19 @@
 		font-size: 1.8rem;
 	}
 
-	.question-view {
+	.question-view,
+	.reading-view,
+	.reveal-view,
+	.review-view {
 		width: 100%;
+		height: 100%;
+		min-height: 0;
 		max-width: 100%;
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		overflow: hidden;
 	}
 
 	:global(.q-text) {

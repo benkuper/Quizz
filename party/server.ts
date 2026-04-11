@@ -17,6 +17,7 @@ type GameStatus = 'lobby' | 'reading' | 'question' | 'reveal' | 'review' | 'lead
 type OptionRevealState = {
     placedOptionIndexes: number[];
     focusedOptionIndex: number | null;
+    revealPhase: 'options' | 'questions' | 'answers';
 };
 
 type GameState = {
@@ -87,7 +88,8 @@ export default class QuizServer implements Party.Server {
         selectedAnswerIndexes: [],
         optionReveal: {
             placedOptionIndexes: [],
-            focusedOptionIndex: null
+            focusedOptionIndex: null,
+            revealPhase: 'options'
         },
         players: createInitialPlayers(),
         lastRoundSummary: undefined,
@@ -194,6 +196,10 @@ export default class QuizServer implements Party.Server {
         return q && String(q.type || '') === 'perfectmatch';
     }
 
+    private isBurgerQuestion(q: any) {
+        return q && String(q.type || '') === 'burger';
+    }
+
     private isQcmLikeQuestion(q: any) {
         const type = String(q?.type || '');
         return type === 'qcm' || type === 'deblur' || type === 'perfectmatch';
@@ -201,7 +207,42 @@ export default class QuizServer implements Party.Server {
 
     private isPassiveQuestion(q: any) {
         const type = String(q?.type || '');
-        return type === 'media' || type === 'karaoke';
+        return type === 'media' || type === 'karaoke' || type === 'burger';
+    }
+
+    private getBurgerQuestions(q: any) {
+        return Array.isArray(q?.options) ? q.options.map(String) : [];
+    }
+
+    private getBurgerAnswers(q: any) {
+        return Array.isArray(q?.answers) ? q.answers.map(String) : [];
+    }
+
+    private getRevealPhase(q: any): 'options' | 'questions' | 'answers' {
+        if (!this.isBurgerQuestion(q)) return 'options';
+        return this.state.optionReveal.revealPhase === 'answers' ? 'answers' : 'questions';
+    }
+
+    private getRevealValues(q: any, phase: 'options' | 'questions' | 'answers' = this.getRevealPhase(q)) {
+        if (this.isBurgerQuestion(q)) {
+            return phase === 'answers' ? this.getBurgerAnswers(q) : this.getBurgerQuestions(q);
+        }
+
+        return Array.isArray(q?.options) ? q.options.map(String) : [];
+    }
+
+    private getRevealOptionCount(q: any, phase: 'options' | 'questions' | 'answers' = this.getRevealPhase(q)) {
+        return this.getRevealValues(q, phase).length;
+    }
+
+    private getInitialRevealPhase(q: any): 'options' | 'questions' | 'answers' | null {
+        if (!this.isBurgerQuestion(q)) {
+            return this.getQuestionOptionCount(q) > 0 ? 'options' : null;
+        }
+
+        if (this.getRevealOptionCount(q, 'questions') > 0) return 'questions';
+        if (this.getRevealOptionCount(q, 'answers') > 0) return 'answers';
+        return null;
     }
 
     private getQuestionOptionCount(q: any) {
@@ -209,13 +250,18 @@ export default class QuizServer implements Party.Server {
     }
 
     private usesSeparateReveal(q: any) {
-        return Boolean(q?.separateReveal ?? true) && this.getQuestionOptionCount(q) > 0;
+        if (!Boolean(q?.separateReveal ?? true)) return false;
+        if (this.isBurgerQuestion(q)) {
+            return this.getRevealOptionCount(q, 'questions') > 0 || this.getRevealOptionCount(q, 'answers') > 0;
+        }
+        return this.getQuestionOptionCount(q) > 0;
     }
 
     private resetOptionReveal() {
         this.state.optionReveal = {
             placedOptionIndexes: [],
-            focusedOptionIndex: null
+            focusedOptionIndex: null,
+            revealPhase: 'options'
         };
     }
 
@@ -243,8 +289,8 @@ export default class QuizServer implements Party.Server {
         this.broadcastState();
     }
 
-    private getNextUnplacedOptionIndex(q: any) {
-        const total = this.getQuestionOptionCount(q);
+    private getNextUnplacedOptionIndex(q: any, phase: 'options' | 'questions' | 'answers' = this.getRevealPhase(q)) {
+        const total = this.getRevealOptionCount(q, phase);
         for (let index = 0; index < total; index++) {
             if (!this.state.optionReveal.placedOptionIndexes.includes(index)) {
                 return index;
@@ -253,9 +299,9 @@ export default class QuizServer implements Party.Server {
         return null;
     }
 
-    private allOptionsPlaced(q: any) {
-        const total = this.getQuestionOptionCount(q);
-        return total > 0 && this.state.optionReveal.placedOptionIndexes.length >= total;
+    private allOptionsPlaced(q: any, phase: 'options' | 'questions' | 'answers' = this.getRevealPhase(q)) {
+        const total = this.getRevealOptionCount(q, phase);
+        return this.state.optionReveal.placedOptionIndexes.length >= total;
     }
 
     private startRevealStage() {
@@ -265,10 +311,33 @@ export default class QuizServer implements Party.Server {
             return;
         }
 
+        const initialPhase = this.getInitialRevealPhase(currentQ);
+        if (!initialPhase) {
+            if (this.isBurgerQuestion(currentQ)) {
+                this.endRound();
+            } else {
+                this.launchQuestion();
+            }
+            return;
+        }
+
         this.state.status = 'reveal';
         this.state.optionReveal = {
             placedOptionIndexes: [],
-            focusedOptionIndex: this.getNextUnplacedOptionIndex(currentQ)
+            focusedOptionIndex: this.getNextUnplacedOptionIndex(currentQ, initialPhase),
+            revealPhase: initialPhase
+        };
+        this.broadcastState();
+    }
+
+    private startBurgerAnswerReveal() {
+        const currentQ = QUESTIONS[this.state.questionIndex];
+        if (this.state.status !== 'reveal' || !this.isBurgerQuestion(currentQ)) return;
+
+        this.state.optionReveal = {
+            placedOptionIndexes: [],
+            focusedOptionIndex: this.getNextUnplacedOptionIndex(currentQ, 'answers'),
+            revealPhase: 'answers'
         };
         this.broadcastState();
     }
@@ -475,6 +544,10 @@ export default class QuizServer implements Party.Server {
                     this.placeFocusedOption();
                 } else if (!this.allOptionsPlaced(q)) {
                     this.revealNextOption();
+                } else if (this.isBurgerQuestion(q) && this.state.optionReveal.revealPhase !== 'answers') {
+                    this.startBurgerAnswerReveal();
+                } else if (this.isBurgerQuestion(q)) {
+                    this.endRound();
                 } else {
                     this.launchQuestion();
                 }
@@ -751,6 +824,40 @@ export default class QuizServer implements Party.Server {
         return normalized;
     }
 
+    private getQcmRoundBasePoints(q: any, submission: { timeLeft?: number } | undefined) {
+        return String(q?.type || '') === 'deblur'
+            ? Math.max(0, Math.floor(Number(submission?.timeLeft ?? 0)))
+            : 10;
+    }
+
+    private scoreQcmLikeSubmission(q: any, submission: { answer?: unknown; timeLeft?: number }) {
+        const options = Array.isArray(q?.options) ? q.options.map(String) : [];
+        const correctAnswers = this.getQcmCorrectAnswers(q);
+        if (correctAnswers.length === 0) {
+            return { correct: false, points: 0 };
+        }
+
+        const playerAnswers = this.normalizeQcmAnswers(submission?.answer, options).sort((a, b) => a - b);
+        const matchedAnswers = playerAnswers.filter((answerIndex) => correctAnswers.includes(answerIndex));
+        const hasWrongSelection = playerAnswers.some((answerIndex) => !correctAnswers.includes(answerIndex));
+        const isCorrect =
+            !hasWrongSelection &&
+            playerAnswers.length === correctAnswers.length &&
+            matchedAnswers.length === correctAnswers.length;
+
+        const basePoints = this.getQcmRoundBasePoints(q, submission);
+        if (matchedAnswers.length === 0 || hasWrongSelection) {
+            return { correct: isCorrect, points: 0 };
+        }
+
+        if (correctAnswers.length === 1) {
+            return { correct: isCorrect, points: isCorrect ? basePoints : 0 };
+        }
+
+        const points = Math.max(0, Math.round((basePoints * matchedAnswers.length) / correctAnswers.length));
+        return { correct: isCorrect, points };
+    }
+
     private scoreEstimate(
                     guessRaw: unknown,
                     correctRaw: unknown,
@@ -808,6 +915,12 @@ export default class QuizServer implements Party.Server {
             return;
         }
 
+        if (this.isBurgerQuestion(currentQ)) {
+            this.state.lastRoundResults = {};
+            this.state.lastRoundSummary = undefined;
+            return;
+        }
+
         // Reset results for this round
         this.state.lastRoundResults = {};
         this.state.lastRoundSummary = undefined;
@@ -821,21 +934,9 @@ export default class QuizServer implements Party.Server {
 
             // QCM: accept numeric indices, letters, or legacy option labels.
             if (this.isQcmLikeQuestion(currentQ)) {
-                const options = Array.isArray(currentQ.options) ? currentQ.options.map(String) : [];
-                const correctAnswers = this.getQcmCorrectAnswers(currentQ);
-                if (correctAnswers.length === 0) return;
-                const playerAns = this.normalizeQcmAnswers(ans, options).sort((a, b) => a - b);
-                const isCorrect =
-                    playerAns.length === correctAnswers.length &&
-                    playerAns.every((answerIndex, index) => answerIndex === correctAnswers[index]);
-
-                const correctPoints =
-                    type === 'deblur'
-                        ? Math.max(0, Math.floor(Number(submission?.timeLeft ?? 0)))
-                        : 10;
-                const points = isCorrect ? correctPoints : 0;
+                const { correct, points } = this.scoreQcmLikeSubmission(currentQ, submission ?? {});
                 this.state.players[pid].score += points;
-                this.state.lastRoundResults[pid] = { correct: isCorrect, points };
+                this.state.lastRoundResults[pid] = { correct, points };
                 return;
             }
 
@@ -935,7 +1036,10 @@ export default class QuizServer implements Party.Server {
         const currentQcmAnswers = this.isQcmLikeQuestion(currentQ)
             ? this.getQcmCorrectAnswers(currentQ)
             : [];
+        const burgerRevealPhase = this.getRevealPhase(currentQ);
         const shouldHideAnswers =
+            (this.isBurgerQuestion(currentQ) &&
+                (this.state.status === 'reading' || (this.state.status === 'reveal' && burgerRevealPhase !== 'answers'))) ||
             this.state.status === 'question' ||
             (this.isPerfectMatchQuestion(currentQ) && this.state.awaitingAdminAnswerSelection);
 
@@ -1019,7 +1123,8 @@ export default class QuizServer implements Party.Server {
                 ? {
                     placedOptionIndexes: [...this.state.optionReveal.placedOptionIndexes],
                     focusedOptionIndex: this.state.optionReveal.focusedOptionIndex,
-                    totalOptions: this.getQuestionOptionCount(currentQ)
+                    totalOptions: this.getRevealOptionCount(currentQ),
+                    revealPhase: this.getRevealPhase(currentQ)
                 }
                 : undefined,
             // Review-only summary used by projector to show clustered guesses

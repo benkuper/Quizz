@@ -8,6 +8,7 @@
 	import MediaQuestion from './types/MediaQuestion.svelte';
 	import KaraokeQuestion from './types/KaraokeQuestion.svelte';
 	import VrWhackQuestion from './types/VrWhackQuestion.svelte';
+	import BurgerQuestion from './types/BurgerQuestion.svelte';
 
 	type Props = {
 		status: GameStatus;
@@ -45,6 +46,8 @@
 		<SortingQuestion question={question as any} value={value as any} onChange={onChange as any} />
 	{:else if type === 'media'}
 		<MediaQuestion question={question as any} />
+	{:else if type === 'burger'}
+		<BurgerQuestion {status} question={question as any} />
 	{:else if type === 'karaoke'}
 		<KaraokeQuestion {status} question={question as any} sync={karaokeSync} />
 	{:else if type === 'vrwhack'}

@@ -27,6 +27,13 @@ export type QuizQuestionQcm = QuizQuestionBase & {
 	answers?: QuizOptionAnswer[];
 };
 
+export type QuizQuestionDeblur = QuizQuestionBase & {
+	type: 'deblur';
+	options: string[];
+	multiple?: boolean;
+	answers?: QuizOptionAnswer[];
+};
+
 export type QuizQuestionPerfectMatch = QuizQuestionBase & {
 	type: 'perfectmatch';
 	options: string[];
@@ -38,6 +45,12 @@ export type QuizQuestionSorting = QuizQuestionBase & {
 	type: 'sorting';
 	options: string[];
 	answers?: string[];
+};
+
+export type QuizQuestionBurger = QuizQuestionBase & {
+	type: 'burger';
+	options: string[];
+	answers: string[];
 };
 
 export type EstimateUnit = 'year' | 'number';
@@ -144,8 +157,10 @@ export type KaraokePlaybackSync = {
 
 export type QuizQuestion =
 	| QuizQuestionQcm
+	| QuizQuestionDeblur
 	| QuizQuestionPerfectMatch
 	| QuizQuestionSorting
+	| QuizQuestionBurger
 	| QuizQuestionEstimate
 	| QuizQuestionFastFingers
 	| QuizQuestionVrWhack
@@ -171,6 +186,7 @@ export type OptionRevealState = {
 	placedOptionIndexes: number[];
 	focusedOptionIndex: number | null;
 	totalOptions: number;
+	revealPhase?: 'options' | 'questions' | 'answers';
 };
 
 export type BroadcastState = {

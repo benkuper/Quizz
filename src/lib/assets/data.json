@@ -102,6 +102,7 @@
 			"id": "db2",
 			"type": "qcm",
 			"time": 25,
+			"nolight": true,
 			"question": "Problème Electrique : ca a l'air d'être un problème dans la base de données.. seul Eric peut nous sauver ! Mais quelle est donc cette technologie ?",
 			"options": ["DBZ", "DB2", "R2D2", "H2G2"],
 			"answers": [2]
@@ -131,7 +132,7 @@
 			"id": "continent",
 			"type": "qcm",
 			"time": 25,
-			"question": "Le ou lesquels de ces continents Eric n'a jamais visité ?",
+			"question": "2 de ces continents n'ont jamais été foulés par les pieds d'Eric, lesquels ?",
 			"options": [
 				"Afrique",
 				"Amérique du Nord",

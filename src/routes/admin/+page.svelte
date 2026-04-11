@@ -3,6 +3,7 @@
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import TeamBadge from '$lib/components/shared/TeamBadge.svelte';
 	import {
+		isBurgerQuestionType,
 		isPerfectMatchQuestionType,
 		isQcmLikeQuestionType
 	} from '$lib/quiz/questionTypes';
@@ -149,7 +150,7 @@
 		if (!q) return '—';
 		const text = Array.isArray(q.question) ? q.question.join(' ') : String(q.question ?? '');
 		const type = String(q.type ?? '');
-		const timer = type === 'media' || type === 'karaoke' ? '—' : `${gameState?.timer ?? 0}s`;
+		const timer = type === 'media' || type === 'karaoke' || type === 'burger' ? '—' : `${gameState?.timer ?? 0}s`;
 		return `${text} · ${type}${type ? '' : '—'} · ${timer}`;
 	});
 
@@ -162,7 +163,30 @@
 	const currentQuestionOptions = $derived.by(() =>
 		Array.isArray(gameState?.question?.options) ? gameState.question.options.map(String) : []
 	);
+	const currentQuestionAnswers = $derived.by(() =>
+		Array.isArray(gameState?.question?.answers) ? gameState.question.answers.map(String) : []
+	);
 	const optionReveal = $derived.by(() => gameState?.optionReveal ?? null);
+	const hasSeparateReveal = $derived.by(() => {
+		if (!gameState?.question) return false;
+		if (gameState.question.separateReveal === false) return false;
+		if (isBurgerQuestionType(gameState.question.type)) {
+			return currentQuestionOptions.length > 0 || currentQuestionAnswers.length > 0;
+		}
+		return currentQuestionOptions.length > 0;
+	});
+	const revealPhaseLabel = $derived.by(() => {
+		if (!isBurgerQuestionType(gameState?.question?.type)) return 'Options';
+		return optionReveal?.revealPhase === 'answers' ? 'Answers' : 'Questions';
+	});
+	const revealItemLabel = $derived.by(() => {
+		if (!isBurgerQuestionType(gameState?.question?.type)) return 'option';
+		return optionReveal?.revealPhase === 'answers' ? 'answer' : 'question';
+	});
+	const currentRevealItems = $derived.by(() => {
+		if (!isBurgerQuestionType(gameState?.question?.type)) return currentQuestionOptions;
+		return optionReveal?.revealPhase === 'answers' ? currentQuestionAnswers : currentQuestionOptions;
+	});
 	const allRevealOptionsPlaced = $derived.by(() => {
 		const placed = optionReveal?.placedOptionIndexes ?? [];
 		const total = optionReveal?.totalOptions ?? 0;
@@ -209,11 +233,15 @@
 	);
 	const nextButtonLabel = $derived.by(() => {
 		if (gameState?.status === 'reading') {
-			return gameState?.question?.separateReveal ? 'Start reveal' : 'Launch';
+			return hasSeparateReveal ? 'Start reveal' : 'Launch';
 		}
 		if (gameState?.status === 'reveal') {
-			if (optionReveal?.focusedOptionIndex !== null) return 'Place';
-			if (!allRevealOptionsPlaced) return 'Show option';
+			if (optionReveal?.focusedOptionIndex !== null) return `Place ${revealItemLabel}`;
+			if (!allRevealOptionsPlaced) return `Show ${revealItemLabel}`;
+			if (isBurgerQuestionType(gameState?.question?.type) && optionReveal?.revealPhase !== 'answers') {
+				return 'Start answers';
+			}
+			if (isBurgerQuestionType(gameState?.question?.type)) return 'Finish reveal';
 			return 'Start countdown';
 		}
 		if (gameState?.status === 'review' && awaitingAdminAnswerSelection) {
@@ -377,10 +405,10 @@
 			</div>
 		</div>
 
-		{#if gameState?.status === 'reveal' && currentQuestionOptions.length > 0 && optionReveal}
+		{#if gameState?.status === 'reveal' && currentRevealItems.length > 0 && optionReveal}
 			<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300">
-				<span class="text-slate-400">Reveal: {optionReveal.placedOptionIndexes.length}/{optionReveal.totalOptions}</span>
-				{#each currentQuestionOptions as opt, index}
+				<span class="text-slate-400">{revealPhaseLabel}: {optionReveal.placedOptionIndexes.length}/{optionReveal.totalOptions}</span>
+				{#each currentRevealItems as opt, index}
 					<button
 						onclick={() => focusOption(index)}
 						disabled={!optionReveal.placedOptionIndexes.includes(index)}

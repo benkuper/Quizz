@@ -1,6 +1,6 @@
 export function isPassiveQuestionType(type: unknown) {
 	const normalized = String(type ?? '');
-	return normalized === 'media' || normalized === 'karaoke';
+	return normalized === 'media' || normalized === 'karaoke' || normalized === 'burger';
 }
 
 export function isQcmLikeQuestionType(type: unknown) {
@@ -10,6 +10,10 @@ export function isQcmLikeQuestionType(type: unknown) {
 
 export function isPerfectMatchQuestionType(type: unknown) {
 	return String(type ?? '') === 'perfectmatch';
+}
+
+export function isBurgerQuestionType(type: unknown) {
+	return String(type ?? '') === 'burger';
 }
 
 export function isKaraokeQuestionType(type: unknown) {

@@ -6,6 +6,8 @@
 		reveal: OptionRevealState;
 		labels?: string[];
 		optionImages?: Array<string | null>;
+		layout?: 'grid' | 'sidebar';
+		textScale?: 'default' | 'large';
 		showLabels?: boolean;
 		slotStates?: Array<'correct' | 'wrong' | null>;
 		onFocusImageChange?: ((payload: { label?: string; text: string; imageSrc: string } | null) => void) | undefined;
@@ -16,6 +18,8 @@
 		reveal,
 		labels = [],
 		optionImages = [],
+		layout = 'grid',
+		textScale = 'default',
 		showLabels = false,
 		slotStates = [],
 		onFocusImageChange
@@ -100,8 +104,8 @@
 </script>
 
 
-<div class="reveal-board">
-	<div class="options reveal-grid">
+<div class="reveal-board" class:is-sidebar={layout === 'sidebar'} class:has-large-text={textScale === 'large'}>
+	<div class="options reveal-grid" class:layout-sidebar={layout === 'sidebar'}>
 		{#each options as option, index}
 			<div
 				class="option reveal-slot"
@@ -173,10 +177,25 @@
 		min-height: 24rem;
 	}
 
+	.reveal-board.is-sidebar {
+		min-height: 0;
+		height: 100%;
+		max-height: 100%;
+		overflow: hidden;
+	}
+
 	.reveal-grid {
 		position: relative;
 		z-index: 1;
 		gap:.5rem;
+	}
+
+	.reveal-grid.layout-sidebar {
+		grid-template-columns: 1fr;
+		grid-auto-rows: minmax(0, 1fr);
+		align-content: start;
+		height: 100%;
+		min-height: 0;
 	}
 
 	.reveal-slot {
@@ -390,6 +409,72 @@
 		.slot-content.is-fading-in {
 			animation: none;
 		}
+	}
+
+	.reveal-board.is-sidebar .reveal-slot {
+		min-height: clamp(2.7rem, 5.3vh, 3.8rem);
+	}
+
+	.reveal-board.is-sidebar .option-label {
+		left: 0.35rem;
+		top: 50%;
+		transform: translateY(-50%);
+		padding: 0.2rem 0.42rem;
+		font-size: clamp(0.8rem, 1.25vw, 1rem);
+		line-height: 1;
+	}
+
+	.reveal-board.is-sidebar .option-body {
+		padding-left: 2.1rem;
+	}
+
+	.reveal-board.is-sidebar .option-text {
+		padding: 0.28rem 0.45rem 0.28rem 0;
+		font-size: clamp(1rem, 1.75vw, 1.45rem);
+		line-height: 1.02;
+		text-align: left;
+		overflow-wrap: anywhere;
+	}
+
+	.reveal-board.is-sidebar .has-image .option-text {
+		font-size: clamp(0.95rem, 1.45vw, 1.15rem);
+		line-height: 1.15;
+	}
+
+	.reveal-board.is-sidebar .slot-placeholder {
+		font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+	}
+
+	.reveal-board.is-sidebar .focus-stage {
+		place-items: start stretch;
+		padding-top: 0;
+	}
+
+	.reveal-board.is-sidebar .focus-card {
+		width: 100%;
+		min-height: clamp(2.7rem, 5.3vh, 3.8rem);
+		padding: 0.45rem 0.55rem;
+	}
+
+	.reveal-board.is-sidebar .focus-card .option-body {
+		padding-left: 2.1rem;
+	}
+
+	.reveal-board.is-sidebar.has-large-text .option-label {
+		font-size: clamp(0.92rem, 1.45vw, 1.15rem);
+	}
+
+	.reveal-board.is-sidebar.has-large-text .option-text {
+		font-size: clamp(1.15rem, 2vw, 1.7rem);
+		line-height: 1.04;
+	}
+
+	.reveal-board.is-sidebar.has-large-text .has-image .option-text {
+		font-size: clamp(1rem, 1.65vw, 1.3rem);
+	}
+
+	.reveal-board.is-sidebar.has-large-text .slot-placeholder {
+		font-size: clamp(1rem, 1.55vw, 1.25rem);
 	}
 
 	@media (max-width: 60rem) {

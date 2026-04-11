@@ -10,7 +10,11 @@
 	import SignContainer from '$lib/components/projector/SignContainer.svelte';
 	import PlayerInfo from '$lib/components/projector/PlayerInfo.svelte';
 	import { TEAM_DEFINITIONS } from '$lib/quiz/config';
-	import { isKaraokeQuestionType, isPassiveQuestionType } from '$lib/quiz/questionTypes';
+	import {
+		isBurgerQuestionType,
+		isKaraokeQuestionType,
+		isPassiveQuestionType
+	} from '$lib/quiz/questionTypes';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	type FocusedOptionOverlayData = {
@@ -162,6 +166,10 @@
 						sign1Text = 'KARA';
 						sign2Text = 'OKE';
 						sign3Text = 'PRET';
+						} else if (isBurgerQuestionType(questionType)) {
+							sign1Text = 'BURGER';
+							sign2Text = 'LIS';
+							sign3Text = 'PRET';
 					} else if (isPassiveQuestionType(questionType)) {
 						sign1Text = 'INTER';
 						sign2Text = 'MEDE';
@@ -192,9 +200,15 @@
 				break;
 
 			case 'reveal':
-				sign1Text = 'REPONSES';
-				sign2Text = 'UNE';
-				sign3Text = 'PAR UNE';
+					if (isBurgerQuestionType(questionType) && gameState?.optionReveal?.revealPhase !== 'answers') {
+						sign1Text = 'QUESTIONS';
+						sign2Text = 'UNE';
+						sign3Text = 'PAR UNE';
+					} else {
+						sign1Text = 'REPONSES';
+						sign2Text = 'UNE';
+						sign3Text = 'PAR UNE';
+					}
 				break;
 
 			case 'review':

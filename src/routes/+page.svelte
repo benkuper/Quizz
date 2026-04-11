@@ -795,8 +795,14 @@
 				>
 					{#if gameState.status === 'reveal'}
 						<div class="text-4xl">🎞️</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Revelation des reponses</h2>
-						<p class="mt-1 text-sm text-slate-300">Regarde le projecteur pendant l'apparition des options.</p>
+						<h2 class="mt-2 text-2xl font-extrabold">
+							{qType === 'burger' ? 'Revelation en cours' : 'Revelation des reponses'}
+						</h2>
+						<p class="mt-1 text-sm text-slate-300">
+							{qType === 'burger'
+								? 'Regarde le projecteur pour la revelation des questions puis des reponses.'
+								: "Regarde le projecteur pendant l'apparition des options."}
+						</p>
 					{:else if reviewFeedback === 'perfect'}
 						<div class="text-4xl">✅</div>
 						<h2 class="mt-2 text-2xl font-extrabold">Parfait</h2>

@@ -606,6 +606,7 @@
 		position: relative;
 		display: flex;
 		width: min(100%, var(--karaoke-copy-width));
+		min-width: 0;
 		justify-content: center;
 		margin-inline: auto;
 		transform: translateY(0);
@@ -631,6 +632,7 @@
 		display: inline-grid;
 		width: max-content;
 		max-width: 100%;
+		min-width: 0;
 	}
 
 	.karaoke-line-base {
@@ -731,6 +733,20 @@
 
 	.karaoke-placeholder--error {
 		color: #fecaca;
+	}
+
+	.karaoke-display--phone .karaoke-line-copy {
+		width: 100%;
+		justify-items: center;
+	}
+
+	.karaoke-display--phone .karaoke-phrase p,
+	.karaoke-display--phone .karaoke-line-base,
+	.karaoke-display--phone .karaoke-line-fill {
+		width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		text-wrap: balance;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

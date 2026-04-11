@@ -9,6 +9,7 @@
 	import MediaView from './types/MediaView.svelte';
 	import KaraokeView from './types/KaraokeView.svelte';
 	import VrWhackView from './types/VrWhackView.svelte';
+	import BurgerView from './types/BurgerView.svelte';
 	import QuestionImageStrip from './QuestionImageStrip.svelte';
 	import { isPassiveQuestionType, isQcmLikeQuestionType } from '$lib/quiz/questionTypes';
 
@@ -44,7 +45,7 @@
 	{#if !question}
 		<div class="loading">Chargement de la question…</div>
 	{:else}
-		{#if !isPassiveQuestionType(type)}
+		{#if !isPassiveQuestionType(type) && type !== 'deblur'}
 			<h2 class="q-text">{text(question)}</h2>
 			{#if type !== 'qcm' && type !== 'deblur'}
 				<QuestionImageStrip questionId={question.id} />
@@ -54,6 +55,8 @@
 			<div class="reading-spacer"></div>
 		{:else if type === 'deblur'}
 			<DeblurView {status} question={question as any} {optionReveal} {timer} />
+		{:else if type === 'burger'}
+			<BurgerView {status} question={question as any} {optionReveal} />
 		{:else if isQcmLikeQuestionType(type)}
 			<QcmView {status} question={question as any} {optionReveal} {onFocusImageChange} />
 		{:else if type === 'sorting'}
@@ -83,9 +86,12 @@
 	.question-renderer {
 		display: flex;
 		width: 100%;
+		height: 100%;
+		min-height: 0;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		overflow: hidden;
 	}
 
 	.loading {

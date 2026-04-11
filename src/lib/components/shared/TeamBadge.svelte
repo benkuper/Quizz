@@ -9,6 +9,7 @@
 		teamName?: string;
 		spinning?: boolean;
 		spinMode?: 'none' | 'once' | 'infinite';
+		renderMode?: 'full' | 'flat';
 		spinDuration?: string;
 		spinTurns?: number;
 		spinKey?: string | number;
@@ -22,6 +23,7 @@
 		teamName = '',
 		spinning = false,
 		spinMode = 'none',
+		renderMode = 'full',
 		spinDuration = '18s',
 		spinTurns = 3,
 		spinKey = '',
@@ -45,6 +47,7 @@
 	});
 	const isInfiniteSpin = $derived(normalizedSpinMode === 'infinite');
 	const isOneShotSpin = $derived(normalizedSpinMode === 'once');
+	const isFlatRender = $derived(renderMode === 'flat');
 	const spinTransform = $derived.by(() => `rotateY(${Math.max(1, Number(spinTurns) || 1) * 360}deg)`);
 	const badgeSceneStyle = $derived.by(() => {
 		const frontImage = frontUrl ? `--badge-front-image:url(${frontUrl});` : '--badge-front-image:none;';
@@ -81,33 +84,41 @@
 	style={badgeSceneStyle}
 >
 	{#if hasArtwork}
-		{#key `${teamId}:${oneShotCycle}`}
-			<div class="badge-body" style="isolation:isolate;">
-				{#each EDGE_DEPTHS as depth}
-					<div class="badge-layer badge-edge" style={`transform: translateZ(${depth});`}></div>
-				{/each}
+		{#if isFlatRender}
+			{#key `${teamId}:${oneShotCycle}`}
+				<div class="badge-flat">
+					<img src={frontUrl!} alt={teamName || teamId} class="badge-image badge-image-flat" onerror={() => (badgeMissing = true)} />
+				</div>
+			{/key}
+		{:else}
+			{#key `${teamId}:${oneShotCycle}`}
+				<div class="badge-body" style="isolation:isolate;">
+					{#each EDGE_DEPTHS as depth}
+						<div class="badge-layer badge-edge" style={`transform: translateZ(${depth});`}></div>
+					{/each}
 
-				<div class="badge-layer badge-face badge-face-front">
-					<img src={frontUrl!} alt={teamName || teamId} class="badge-image" onerror={() => (badgeMissing = true)} />
-					<div class="badge-shine-container">
-						<div class="badge-shine"></div>
+					<div class="badge-layer badge-face badge-face-front">
+						<img src={frontUrl!} alt={teamName || teamId} class="badge-image" onerror={() => (badgeMissing = true)} />
+						<div class="badge-shine-container">
+							<div class="badge-shine"></div>
+						</div>
+						<svg class="badge-ribbon" viewBox="0 0 1280 1280" aria-hidden="true">
+							<defs>
+								<path id={ribbonPathId} d={DEFAULT_RIBBON_PATH}></path>
+							</defs>
+
+							<text class="badge-ribbon-text" text-anchor="middle" textLength="700" lengthAdjust="spacingAndGlyphs">
+								<textPath href={`#${ribbonPathId}`} startOffset="50%">{ribbonLabel}</textPath>
+							</text>
+						</svg>
 					</div>
-					<svg class="badge-ribbon" viewBox="0 0 1280 1280" aria-hidden="true">
-						<defs>
-							<path id={ribbonPathId} d={DEFAULT_RIBBON_PATH}></path>
-						</defs>
 
-						<text class="badge-ribbon-text" text-anchor="middle" textLength="700" lengthAdjust="spacingAndGlyphs">
-							<textPath href={`#${ribbonPathId}`} startOffset="50%">{ribbonLabel}</textPath>
-						</text>
-					</svg>
+					<div class="badge-layer badge-face badge-face-back">
+						<img src={backUrl} alt="" aria-hidden="true" class="badge-image" />
+					</div>
 				</div>
-
-				<div class="badge-layer badge-face badge-face-back">
-					<img src={backUrl} alt="" aria-hidden="true" class="badge-image" />
-				</div>
-			</div>
-		{/key}
+			{/key}
+		{/if}
 	{:else}
 		<div class="badge-fallback">{fallbackLabel}</div>
 	{/if}
@@ -136,12 +147,31 @@
 		transform-style: preserve-3d;
 	}
 
+	.badge-flat {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		border-radius: 999rem;
+		overflow: hidden;
+		background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.22), rgba(15, 23, 42, 0.9));
+		border: 0.12rem solid rgba(255, 255, 255, 0.16);
+		box-shadow: 0 1.1rem 2.1rem rgba(0, 0, 0, 0.28);
+	}
+
 	.badge-scene.spinning .badge-body {
 		animation: badge-spin var(--badge-spin-duration) linear infinite;
 	}
 
 	.badge-scene.spinning-once .badge-body {
 		animation: badge-spin-once var(--badge-spin-duration) cubic-bezier(0.1, 1, 0.2, 1) 1 both;
+	}
+
+	.badge-scene.spinning .badge-flat {
+		animation: badge-flat-spin var(--badge-spin-duration) linear infinite;
+	}
+
+	.badge-scene.spinning-once .badge-flat {
+		animation: badge-flat-spin-once var(--badge-spin-duration) cubic-bezier(0.1, 1, 0.2, 1) 1 both;
 	}
 
 	.badge-layer {
@@ -179,6 +209,10 @@
 		object-fit: contain;
 		user-select: none;
 		-webkit-user-drag: none;
+	}
+
+	.badge-image-flat {
+		object-fit: cover;
 	}
 
 	.badge-shine-container,
@@ -287,6 +321,30 @@
 		}
 	}
 
+	@keyframes badge-flat-spin {
+		from {
+			transform: rotate(0deg);
+		}
+
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes badge-flat-spin-once {
+		0% {
+			transform: rotate(0deg) scale(0.94);
+		}
+
+		20% {
+			transform: rotate(120deg) scale(1);
+		}
+
+		100% {
+			transform: rotate(1080deg) scale(1);
+		}
+	}
+
 	@keyframes badge-shine {
 		0%,
 		100% {
@@ -336,7 +394,9 @@
 	@media (prefers-reduced-motion: reduce) {
 		.badge-scene.spinning .badge-body,
 		.badge-scene.spinning .badge-shine,
+		.badge-scene.spinning .badge-flat,
 		.badge-scene.spinning-once .badge-body,
+		.badge-scene.spinning-once .badge-flat,
 		.badge-scene.spinning-once .badge-shine {
 			animation: none;
 		}

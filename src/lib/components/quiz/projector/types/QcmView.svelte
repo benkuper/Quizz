@@ -1,6 +1,7 @@
 <script lang="ts">
 	import RevealableOptions from './RevealableOptions.svelte';
 	import { loadQuestionOptionImages } from '$lib/quiz/optionImages.svelte';
+	import type { FocusedOptionOverlayData } from '../../../projector/focusedOptionOverlay';
 	import type {
 		GameStatus,
 		OptionRevealState,
@@ -15,10 +16,19 @@
 		status: GameStatus;
 		question: QuizQuestionQcm | QuizQuestionPerfectMatch;
 		optionReveal?: OptionRevealState;
+		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
 	};
 
-	let { status, question, optionReveal }: Props = $props();
+	let { status, question, optionReveal, onFocusImageChange }: Props = $props();
 	let optionImages = $state<Array<string | null>>([]);
+
+	function completedReveal(totalOptions: number): OptionRevealState {
+		return {
+			focusedOptionIndex: null,
+			placedOptionIndexes: Array.from({ length: totalOptions }, (_, index) => index),
+			totalOptions
+		};
+	}
 
 	function optionLabel(index: number) {
 		return OPTION_LABELS[index] ?? String(index + 1);
@@ -70,49 +80,28 @@
 	});
 
 	const optionLabels = $derived.by(() => question.options.map((_, index) => optionLabel(index)));
-	const hasOptionImages = $derived.by(() => optionImages.some((src) => Boolean(src)));
-	const showRevealLayout = $derived.by(() => {
-		if (status !== 'reveal' || !optionReveal) return false;
-		return (
-			optionReveal.focusedOptionIndex !== null ||
-			optionReveal.placedOptionIndexes.length < optionReveal.totalOptions
-		);
+	const resolvedReveal = $derived.by(() => {
+		const totalOptions = question.options?.length ?? 0;
+		if (!totalOptions) return null;
+		if (status === 'reveal' && optionReveal) return optionReveal;
+		return completedReveal(totalOptions);
+	});
+	const reviewSlotStates = $derived.by(() => {
+		if (status !== 'review' || correctAnswerIndexes.length === 0) return [];
+		return question.options.map((_, index) => (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong'));
 	});
 </script>
 
-{#if showRevealLayout && question.options}
+{#if resolvedReveal && question.options}
 	<RevealableOptions
 		options={question.options}
-		reveal={optionReveal!}
+		reveal={resolvedReveal}
 		labels={optionLabels}
 		optionImages={optionImages}
 		showLabels
+		slotStates={reviewSlotStates}
+		onFocusImageChange={onFocusImageChange}
 	/>
-{:else}
-	<div class="options">
-		{#if question.options}
-			{#each question.options as opt, index}
-				{@const hasReviewAnswers = correctAnswerIndexes.length > 0}
-				{@const imageSrc = optionImages[index]}
-				<div
-					class="option {status === 'review' && hasReviewAnswers
-						? 'review-' + (correctAnswerIndexes.includes(index + 1) ? 'correct' : 'wrong')
-						: ''}"
-					class:has-image={Boolean(imageSrc)}
-				>
-					<span class="option-label">{optionLabel(index)}</span>
-					<div class="option-body" class:has-image={Boolean(imageSrc)}>
-						{#if imageSrc}
-							<div class="option-image-shell">
-								<img class="option-image" src={imageSrc} alt={opt} />
-							</div>
-						{/if}
-						<span class="option-text">{opt}</span>
-					</div>
-				</div>
-			{/each}
-		{/if}
-	</div>
 {/if}
 
 <!-- {#if status === 'review' && question.answers}
@@ -124,91 +113,3 @@
 	</div>
 {/if} -->
 
-<style>
-	.option {
-		transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.option.has-image {
-		align-items: stretch;
-	}
-
-	.option-label {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 3rem;
-		height: 3rem;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.1);
-		font-size: 1.4rem;
-		font-weight: 800;
-		flex-shrink: 0;
-	}
-
-	.option-text {
-		flex: 1;
-	}
-
-	.option-body {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.option-body.has-image {
-		align-items: stretch;
-	}
-
-	.option-image-shell {
-		width: min(20vw, 12rem);
-		height: 7rem;
-		flex-shrink: 0;
-		border-radius: 1rem;
-		overflow: hidden;
-		background: rgba(15, 23, 42, 0.92);
-		border: 0.1rem solid rgba(255, 255, 255, 0.12);
-	}
-
-	.option-image {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-	}
-
-	.option.review-correct {
-		background-color: #166534;
-		border-color: #22c55e;
-		color: white;
-	}
-
-	.option.review-wrong {
-		background-color: #7f1d1d;
-		border-color: #ef4444;
-		color: white;
-	}
-
-	@media (max-width: 60rem) {
-		.option,
-		.option-body.has-image {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-
-		.option-label {
-			width: 2.75rem;
-			height: 2.75rem;
-		}
-
-		.option-image-shell {
-			width: 100%;
-			height: 10rem;
-		}
-	}
-</style>

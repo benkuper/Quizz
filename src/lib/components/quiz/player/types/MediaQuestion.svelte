@@ -41,6 +41,6 @@ No content so players are all looking at the projector
 -->
 
 <div class="media-question">
-    Media Interlude
+	Intermede media
 </div>
 

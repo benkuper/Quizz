@@ -24,6 +24,7 @@ type GameState = {
     questionIndex: number;
     timer: number;
     questionStartedAt: number | null;
+    badgeOverlayTeamId: string | null;
     awaitingAdminAnswerSelection: boolean;
     selectedAnswerIndexes: number[];
     optionReveal: OptionRevealState;
@@ -81,6 +82,7 @@ export default class QuizServer implements Party.Server {
         questionIndex: -1,
         timer: 0,
         questionStartedAt: null,
+        badgeOverlayTeamId: null,
         awaitingAdminAnswerSelection: false,
         selectedAnswerIndexes: [],
         optionReveal: {
@@ -137,6 +139,20 @@ export default class QuizServer implements Party.Server {
             this.clearPlayerConnection(teamId);
         }
 
+        this.broadcastState();
+    }
+
+    private setBadgeOverlayTeam(teamId: string | null) {
+        if (teamId === null) {
+            this.state.badgeOverlayTeamId = null;
+            this.broadcastState();
+            return;
+        }
+
+        const normalizedTeamId = String(teamId || '').trim();
+        if (!normalizedTeamId || !this.state.players[normalizedTeamId]) return;
+
+        this.state.badgeOverlayTeamId = this.state.badgeOverlayTeamId === normalizedTeamId ? null : normalizedTeamId;
         this.broadcastState();
     }
 
@@ -476,6 +492,16 @@ export default class QuizServer implements Party.Server {
             }
         }
 
+        if (event.type === 'admin_toggle_badge_overlay') {
+            const teamId = String(event.teamId || '').trim();
+            if (!teamId) return;
+            this.setBadgeOverlayTeam(teamId);
+        }
+
+        if (event.type === 'admin_hide_badge_overlay') {
+            this.setBadgeOverlayTeam(null);
+        }
+
         if (event.type === 'admin_remove_offline') {
             this.broadcastState();
         }
@@ -803,7 +829,11 @@ export default class QuizServer implements Party.Server {
                     playerAns.length === correctAnswers.length &&
                     playerAns.every((answerIndex, index) => answerIndex === correctAnswers[index]);
 
-                const points = isCorrect ? 10 : 0;
+                const correctPoints =
+                    type === 'deblur'
+                        ? Math.max(0, Math.floor(Number(submission?.timeLeft ?? 0)))
+                        : 10;
+                const points = isCorrect ? correctPoints : 0;
                 this.state.players[pid].score += points;
                 this.state.lastRoundResults[pid] = { correct: isCorrect, points };
                 return;
@@ -981,6 +1011,7 @@ export default class QuizServer implements Party.Server {
             serverNow: Date.now(),
             questionStartedAt: this.state.questionStartedAt,
             players: playersSafe,
+            badgeOverlayTeamId: this.state.badgeOverlayTeamId,
             // Don't send all answers to everyone, maybe just count
             answerCount: Object.keys(this.state.currentAnswers).length,
             awaitingAdminAnswerSelection: this.state.awaitingAdminAnswerSelection,

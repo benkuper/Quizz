@@ -7,9 +7,19 @@
 		labels?: string[];
 		optionImages?: Array<string | null>;
 		showLabels?: boolean;
+		slotStates?: Array<'correct' | 'wrong' | null>;
+		onFocusImageChange?: ((payload: { label?: string; text: string; imageSrc: string } | null) => void) | undefined;
 	};
 
-	let { options, reveal, labels = [], optionImages = [], showLabels = false }: Props = $props();
+	let {
+		options,
+		reveal,
+		labels = [],
+		optionImages = [],
+		showLabels = false,
+		slotStates = [],
+		onFocusImageChange
+	}: Props = $props();
 
 	let landingOptionIndexes = $state<number[]>([]);
 	let fadingFocusOptionIndex = $state<number | null>(null);
@@ -18,8 +28,23 @@
 	let previousPlacedOptionIndexes: number[] = [];
 
 	const focusedOptionIndex = $derived(reveal?.focusedOptionIndex ?? null);
+	const activeFocusOptionIndex = $derived(focusedOptionIndex ?? fadingFocusOptionIndex);
 	const placedOptionIndexes = $derived(Array.isArray(reveal?.placedOptionIndexes) ? reveal.placedOptionIndexes : []);
 	const placedLookup = $derived.by(() => new Set(placedOptionIndexes));
+	const activeFocusHasImage = $derived(
+		activeFocusOptionIndex !== null && Boolean(optionImage(activeFocusOptionIndex))
+	);
+	const activeFocusImagePayload = $derived.by(() => {
+		if (activeFocusOptionIndex === null) return null;
+		const imageSrc = optionImage(activeFocusOptionIndex);
+		if (!imageSrc) return null;
+
+		return {
+			label: showLabels ? optionLabel(activeFocusOptionIndex) : undefined,
+			text: options[activeFocusOptionIndex],
+			imageSrc
+		};
+	});
 
 	function optionLabel(index: number) {
 		return labels[index] ?? String(index + 1);
@@ -27,6 +52,10 @@
 
 	function optionImage(index: number) {
 		return optionImages[index] ?? null;
+	}
+
+	function slotState(index: number) {
+		return slotStates[index] ?? null;
 	}
 
 	$effect(() => {
@@ -58,6 +87,16 @@
 		previousFocusedOptionIndex = nextFocused;
 		previousPlacedOptionIndexes = nextPlaced;
 	});
+
+	$effect(() => {
+		onFocusImageChange?.(activeFocusImagePayload);
+	});
+
+	$effect(() => {
+		return () => {
+			onFocusImageChange?.(null);
+		};
+	});
 </script>
 
 
@@ -69,6 +108,8 @@
 				class:has-image={Boolean(optionImage(index))}
 				class:is-placed={placedLookup.has(index)}
 				class:is-landing={landingOptionIndexes.includes(index)}
+				class:is-review-correct={slotState(index) === 'correct'}
+				class:is-review-wrong={slotState(index) === 'wrong'}
 			>
 				<div
 					class="slot-content"
@@ -98,30 +139,27 @@
 		{/each}
 	</div>
 
-	{#if focusedOptionIndex !== null || fadingFocusOptionIndex !== null}
+	{#if activeFocusOptionIndex !== null && !activeFocusHasImage}
 		<div class="focus-stage">
 			<div
 				class="option focus-card"
-				class:has-image={Boolean(optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!))}
+				class:has-image={activeFocusHasImage}
 				class:is-fading-out={focusedOptionIndex === null && fadingFocusOptionIndex !== null}
 			>
 				{#if showLabels}
-					<span class="option-label">{optionLabel(focusedOptionIndex ?? fadingFocusOptionIndex!)}</span>
+					<span class="option-label">{optionLabel(activeFocusOptionIndex)}</span>
 				{/if}
-				<div
-					class="option-body"
-					class:has-image={Boolean(optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!))}
-				>
-					{#if optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!)}
+				<div class="option-body" class:has-image={activeFocusHasImage}>
+					{#if optionImage(activeFocusOptionIndex)}
 						<div class="option-image-shell focus-image-shell">
 							<img
 								class="option-image focus-image"
-								src={optionImage(focusedOptionIndex ?? fadingFocusOptionIndex!)!}
-								alt={options[focusedOptionIndex ?? fadingFocusOptionIndex!]}
+								src={optionImage(activeFocusOptionIndex)!}
+								alt={options[activeFocusOptionIndex]}
 							/>
 						</div>
 					{/if}
-					<span class="option-text">{options[focusedOptionIndex ?? fadingFocusOptionIndex!]}</span>
+					<span class="option-text">{options[activeFocusOptionIndex]}</span>
 				</div>
 			</div>
 		</div>
@@ -138,6 +176,7 @@
 	.reveal-grid {
 		position: relative;
 		z-index: 1;
+		gap:.5rem;
 	}
 
 	.reveal-slot {
@@ -155,6 +194,26 @@
 		width: 100%;
 	}
 
+	.option
+	{
+		position:relative;
+		padding:0;
+	}
+
+	.option-label
+	{
+		position:absolute;
+		left:.5rem;
+		top:.5rem;
+		padding:1rem;
+		background:rgba(0,0,0,0.3);
+		border-radius:0.75rem;
+		font-size:0.75rem;
+		font-size: 5rem;
+
+	}
+
+
 	.option-body {
 		display: flex;
 		align-items: center;
@@ -163,8 +222,24 @@
 		min-width: 0;
 	}
 
+	.option-text {
+		font-size: 3rem;
+		color: rgba(255, 255, 255, 0.95);
+		width:100%;
+		padding: 1rem;
+		text-align: center;
+	}
+
 	.option-body.has-image {
 		align-items: stretch;
+	}
+
+	.has-image .option-text {
+		flex: 1;
+		font-size: 1.5rem;
+		color: rgba(255, 255, 255, 0.9);
+		padding: 0 1rem;
+		line-height: 1rem;
 	}
 
 	.option-image-shell {
@@ -213,6 +288,18 @@
 
 	.reveal-slot.is-landing {
 		opacity: 0;
+	}
+
+	.reveal-slot.is-review-correct {
+		background-color: #166534;
+		border-color: #22c55e;
+		color: white;
+	}
+
+	.reveal-slot.is-review-wrong {
+		background-color: #7f1d1d;
+		border-color: #ef4444;
+		color: white;
 	}
 
 	.slot-placeholder {

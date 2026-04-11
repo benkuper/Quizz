@@ -14,7 +14,7 @@
 </script>
 
 <div class="rounded-2xl bg-slate-900 p-4">
-	<div class="text-sm text-slate-300">Drag to reorder</div>
+	<div class="text-sm text-slate-300">Glisse pour remettre dans l'ordre</div>
 	<div class="mt-3">
 		<SortableList items={question.options ?? []} value={currentOrder} onChange={onChange} />
 	</div>

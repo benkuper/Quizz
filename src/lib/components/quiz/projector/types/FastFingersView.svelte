@@ -9,8 +9,8 @@
 	let { status }: Props = $props();
 </script>
 
-<div class="muted">Fast fingers: pick the correct image</div>
+<div class="muted">Rapide et juste : choisissez la bonne image</div>
 
 {#if status === 'review'}
-	<div class="muted">Points are the number of correct picks.</div>
+	<div class="muted">Les points correspondent au nombre de bons choix.</div>
 {/if}

@@ -21,7 +21,7 @@
 	let lastQid = $state<string | null>(null);
 
 	const progressText = $derived(
-		steps.length > 0 ? `Step ${Math.min(stepIndex + 1, steps.length)} / ${steps.length}` : 'No steps configured'
+		steps.length > 0 ? `Etape ${Math.min(stepIndex + 1, steps.length)} / ${steps.length}` : 'Aucune etape configuree'
 	);
 
 	$effect(() => {
@@ -49,16 +49,16 @@
 		const s = steps[stepIndex];
 		if (!s) return null;
 		return shuffle && (stepIndex % 2 === 1)
-			? { kind: 'bad' as const, src: s.bad.src, alt: s.bad.alt ?? 'Wrong' }
-			: { kind: 'good' as const, src: s.good.src, alt: s.good.alt ?? 'Correct' };
+			? { kind: 'bad' as const, src: s.bad.src, alt: s.bad.alt ?? 'Mauvais choix' }
+			: { kind: 'good' as const, src: s.good.src, alt: s.good.alt ?? 'Bonne reponse' };
 	}
 
 	function rightChoice() {
 		const s = steps[stepIndex];
 		if (!s) return null;
 		return shuffle && (stepIndex % 2 === 1)
-			? { kind: 'good' as const, src: s.good.src, alt: s.good.alt ?? 'Correct' }
-			: { kind: 'bad' as const, src: s.bad.src, alt: s.bad.alt ?? 'Wrong' };
+			? { kind: 'good' as const, src: s.good.src, alt: s.good.alt ?? 'Bonne reponse' }
+			: { kind: 'bad' as const, src: s.bad.src, alt: s.bad.alt ?? 'Mauvais choix' };
 	}
 
 	const left = $derived(leftChoice());
@@ -80,19 +80,19 @@
 
 <div class="rounded-2xl bg-slate-900 p-4">
 	<div class="flex items-center justify-between">
-		<div class="text-sm font-semibold text-slate-100">Fast Fingers</div>
+		<div class="text-sm font-semibold text-slate-100">Rapide et juste</div>
 		<div class="text-xs text-slate-400">{progressText}</div>
 	</div>
 
 	{#if steps.length === 0}
 		<div class="mt-4 rounded-xl bg-slate-950 p-4 text-center text-sm text-slate-300">
-			No steps configured for this question.
+			Aucune etape n'est configuree pour cette question.
 		</div>
 	{:else if finished}
 		<div class="mt-4 rounded-xl bg-emerald-500/15 p-4 text-center">
 			<div class="text-3xl">🏁</div>
-			<div class="mt-2 text-lg font-extrabold text-emerald-200">Finished!</div>
-			<div class="mt-1 text-sm text-emerald-100">Scoring is calculated at the end.</div>
+			<div class="mt-2 text-lg font-extrabold text-emerald-200">Termine !</div>
+			<div class="mt-1 text-sm text-emerald-100">Le score est calcule a la fin.</div>
 		</div>
 	{:else}
 		<div class="mt-4 grid grid-cols-2 gap-3">
@@ -100,7 +100,7 @@
 				type="button"
 				class="choice"
 				onclick={() => click('left')}
-				aria-label={left?.alt ?? 'Choice'}
+				aria-label={left?.alt ?? 'Choix'}
 			>
 				{#if left}
 					<img class="img" src={getMedia(left.src)} alt={left.alt ?? ''} />
@@ -110,14 +110,14 @@
 				type="button"
 				class="choice"
 				onclick={() => click('right')}
-				aria-label={right?.alt ?? 'Choice'}
+				aria-label={right?.alt ?? 'Choix'}
 			>
 				{#if right}
 					<img class="img" src={getMedia(right.src)} alt={right.alt ?? ''} />
 				{/if}
 			</button>
 		</div>
-		<div class="mt-3 text-center text-xs text-slate-400">Pick fast — it advances instantly.</div>
+		<div class="mt-3 text-center text-xs text-slate-400">Choisis vite : ca avance instantanement.</div>
 	{/if}
 </div>
 

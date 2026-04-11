@@ -152,7 +152,7 @@
 					type="button"
 					class="shrink-0 cursor-grab touch-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-slate-200 transition-transform duration-100 ease-out select-none active:scale-[0.98] disabled:opacity-50"
 					{disabled}
-					aria-label="Drag to reorder"
+					aria-label="Glisser pour reordonner"
 					onpointerdown={(e) => onPointerDown(e, id)}
 				>
 					≡

@@ -186,6 +186,7 @@ export type BroadcastState = {
 	players: Record<string, PlayerView>;
 	answerCount: number;
 	optionReveal?: OptionRevealState;
+	badgeOverlayTeamId?: string | null;
 	awaitingAdminAnswerSelection?: boolean;
 	roundSummary?: {
 		estimate?: {

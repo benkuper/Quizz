@@ -21,6 +21,7 @@
 
 	let joined = $state(false);
 	let selectedTeamId: string | null = $state(null);
+	let highlightedTeamId: string | null = $state(null);
 	let joiningTeamId: string | null = $state(null);
 	let joinError = $state('');
 
@@ -213,7 +214,10 @@
 	function loadSelectedTeam() {
 		try {
 			const stored = localStorage.getItem('quizz:teamId');
-			if (stored) selectedTeamId = stored;
+			if (stored) {
+				selectedTeamId = stored;
+				highlightedTeamId = stored;
+			}
 		} catch {
 			// ignore
 		}
@@ -229,6 +233,7 @@
 
 	function clearSelectedTeam() {
 		selectedTeamId = null;
+		highlightedTeamId = null;
 		joiningTeamId = null;
 		joined = false;
 		try {
@@ -317,10 +322,10 @@
 				joined = false;
 				joinError =
 					msg.reason === 'occupied'
-						? 'This team is already connected on another device.'
+						? 'Cette equipe est deja connectee sur un autre appareil.'
 						: msg.reason === 'disabled'
-							? 'This team is currently disabled by the admin.'
-							: 'This team is no longer available.';
+							? 'Cette equipe est actuellement desactivee par l admin.'
+							: 'Cette equipe n est plus disponible.';
 				clearSelectedTeam();
 				return;
 			}
@@ -333,17 +338,17 @@
 
 				if (selectedTeamId && !currentTeam) {
 					clearSelectedTeam();
-					joinError = 'This team is no longer part of the game.';
+					joinError = 'Cette equipe ne fait plus partie de la partie.';
 				}
 
 				if (selectedTeamId && currentTeam && !currentTeam.enabled) {
 					clearSelectedTeam();
-					joinError = 'This team was disabled by the admin.';
+					joinError = 'Cette equipe a ete desactivee par l admin.';
 				}
 
 				if (joined && selectedTeamId && currentTeam && !currentTeam.connected) {
 					clearSelectedTeam();
-					joinError = 'Team assignment reset. Please choose a team again.';
+					joinError = 'L attribution de l equipe a ete reinitialisee. Choisis une equipe a nouveau.';
 				}
 
 				// If we just (re)joined while a question is already active, play the intro sound for
@@ -460,10 +465,21 @@
 
 	function joinGame(teamId: string) {
 		selectedTeamId = teamId;
+		highlightedTeamId = teamId;
 		joiningTeamId = teamId;
 		joinError = '';
 		saveSelectedTeam(teamId);
 		ensureJoined();
+	}
+
+	function highlightTeam(teamId: string) {
+		highlightedTeamId = teamId;
+		joinError = '';
+	}
+
+	function confirmHighlightedTeam() {
+		if (!highlightedTeamId || joiningTeamId) return;
+		joinGame(highlightedTeamId);
 	}
 
 	function submitAnswer(payload: any) {
@@ -512,6 +528,13 @@
 			document.body.classList.remove('kiosk-player');
 		};
 	});
+
+	$effect(() => {
+		const availableIds = new Set(availableTeams.map((team) => team.id));
+
+		if (highlightedTeamId && availableIds.has(highlightedTeamId)) return;
+		highlightedTeamId = null;
+	});
 </script>
 
 <main
@@ -538,24 +561,23 @@
 						</div>
 						<div>
 							<div class="font-semibold">{selectedTeam.name}</div>
-							<div class="text-slate-300">You are in.</div>
+							<div class="text-slate-300">Equipe connectee.</div>
 						</div>
 					{/if}
-					<div class="min-w-[4.5rem] font-semibold">{myScore} pts</div>
 				</div>
 			</header>
 		{/if}
 
 		<div class="flex-1" class:kiosk-scroll={!immersivePhoneShell} class:min-h-0={!immersivePhoneShell} class:overflow-y-auto={!immersivePhoneShell}>
 			{#if !connected}
-				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Connecting…</div>
+				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Connexion…</div>
 			{:else if !gameState}
-				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Loading…</div>
+				<div class="rounded-2xl bg-slate-900 p-5 text-center text-slate-200">Chargement…</div>
 			{:else if !joined}
 				<section class="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-5 shadow-2xl shadow-slate-950/40" in:fade>
 					<div class="space-y-1 text-center">
-						<h2 class="text-[1.4rem] font-semibold tracking-[0.02em]">Choose your team</h2>
-						<p class="text-sm text-slate-300">Only teams enabled by the admin and not already connected can join.</p>
+						<h2 class="text-[1.4rem] font-semibold tracking-[0.02em]">Choisis ton equipe</h2>
+						<p class="text-sm text-slate-300">Seules les equipes activees par l'admin et non deja connectees peuvent rejoindre la partie.</p>
 					</div>
 
 					{#if joinError}
@@ -564,43 +586,78 @@
 						</p>
 					{/if}
 
-					{#if availableTeams.length > 0}
-						<div class="mt-5 grid gap-3">
-							{#each availableTeams as team (team.id)}
-								<button
-									type="button"
-									class="flex items-center gap-4 rounded-[1.5rem] border border-slate-800 bg-slate-950/80 px-4 py-4 text-left transition hover:border-indigo-400/50 hover:bg-slate-900 disabled:cursor-wait disabled:opacity-60"
-									disabled={Boolean(joiningTeamId)}
-									onclick={() => joinGame(String(team.id))}
-								>
-									<div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-800 bg-slate-900">
-										<TeamBadge teamId={String(team.id)} teamName={String(team.name)} />
-									</div>
+					{#if enabledTeams.length > 0}
+						<div class="mt-5 space-y-4">
+							<button
+								type="button"
+								class="w-full rounded-[1.4rem] bg-indigo-500 px-4 py-3 text-sm font-black uppercase tracking-[0.2em] text-indigo-950 transition disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+								disabled={!highlightedTeamId || Boolean(joiningTeamId)}
+								onclick={confirmHighlightedTeam}
+							>
+								{joiningTeamId ? 'Connexion…' : 'Choisir'}
+							</button>
 
-									<div class="min-w-0 flex-1">
-										<div class="text-[1.05rem] font-semibold text-slate-50">{team.name}</div>
-										<div class="mt-1 text-sm text-slate-400">Current score: {team.score ?? 0} pts</div>
-									</div>
+							<div class="text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+								{#if highlightedTeamId}
+									{enabledTeams.find((team) => team.id === highlightedTeamId)?.name ?? 'Equipe'}
+								{:else}
+									Selectionne un badge
+								{/if}
+							</div>
 
-									<div class="rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-200">
-										{joiningTeamId === team.id ? 'Joining' : 'Select'}
-									</div>
-								</button>
-							{/each}
+							{#if availableTeams.length === 0}
+								<p class="text-center text-sm text-slate-400">Toutes les equipes visibles sont deja prises.</p>
+							{/if}
+
+							<div class="max-h-[55dvh] overflow-y-auto rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-3">
+								<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+									{#each enabledTeams as team (team.id)}
+										<button
+											type="button"
+											class={`group relative flex aspect-square items-center justify-center rounded-[1.6rem] border p-3 transition ${
+												!team.connected && highlightedTeamId === team.id
+													? 'border-indigo-400 bg-indigo-500/10 shadow-[0_0_0_0.2rem_rgba(129,140,248,0.25)]'
+													: team.connected
+														? 'border-slate-800 bg-slate-950/40 opacity-45'
+														: 'border-slate-800 bg-slate-950/90'
+											}`}
+											disabled={Boolean(joiningTeamId) || team.connected}
+											onclick={() => highlightTeam(String(team.id))}
+											aria-pressed={!team.connected && highlightedTeamId === team.id}
+											aria-label={`${team.connected ? 'Equipe indisponible' : 'Choisir l equipe'} ${team.name}`}
+										>
+											<div class="h-full w-full scale-[1.08] transition group-active:scale-100">
+												<TeamBadge
+													teamId={String(team.id)}
+													teamName={String(team.name)}
+													spinMode={!team.connected && highlightedTeamId === team.id ? 'infinite' : 'none'}
+													spinDuration={"4s"}
+													dimmed={team.connected}
+												/>
+											</div>
+											{#if team.connected}
+												<span class="pointer-events-none absolute bottom-2 rounded-full bg-slate-950/90 px-2 py-1 text-[0.62rem] font-bold uppercase tracking-[0.16em] text-slate-300">
+													Indisponible
+												</span>
+											{/if}
+										</button>
+									{/each}
+								</div>
+							</div>
 						</div>
 					{:else}
 						<div class="mt-5 rounded-[1.5rem] border border-slate-800 bg-slate-950/80 px-4 py-5 text-center text-sm text-slate-300">
-							No enabled team is currently available. Wait for the admin to enable one or for a connected team to disconnect.
+							Aucune equipe activee n'est disponible pour le moment. Attends qu'une equipe soit activee ou qu'une equipe connectee se deconnecte.
 						</div>
 					{/if}
 				</section>
 			{:else if gameState.status === 'lobby'}
 				<section class="rounded-2xl bg-slate-900 p-5 text-center" in:fade>
 					<div class="text-3xl">⏳</div>
-					<h2 class="mt-2 text-xl font-semibold">Ready, {selectedTeam?.name}!</h2>
-					<p class="mt-1 text-sm text-slate-300">Waiting for the host to start.</p>
+					<h2 class="mt-2 text-xl font-semibold">Pret, {selectedTeam?.name} !</h2>
+					<p class="mt-1 text-sm text-slate-300">En attente du lancement.</p>
 					<div class="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm text-slate-200">
-						{enabledTeams.length} team(s) playing · {enabledTeams.filter((team: any) => team.connected).length} connected
+						{enabledTeams.length} equipe(s) en jeu · {enabledTeams.filter((team: any) => team.connected).length} connectee(s)
 					</div>
 				</section>
 			{:else if gameState.status == 'question' || gameState.status === 'reading'}
@@ -623,26 +680,26 @@
 									style="padding-top: max(env(safe-area-inset-top), 1rem);"
 								>
 								{#if selectedTeam}
-									<div class="flex max-w-[72%] items-center gap-3 rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 backdrop-blur-sm">
-										<div class="h-14 w-14 shrink-0">
+									<!-- <div class="flex max-w-[72%] items-center gap-3 rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 backdrop-blur-sm"> -->
+										<div class="h-20 w-20 shrink-0">
 											<TeamBadge teamId={String(selectedTeam.id)} teamName={String(selectedTeam.name)} />
 										</div>
-										<div class="min-w-0">
-											<div class="truncate text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Team</div>
+										<!-- <div class="min-w-0">
+											<div class="truncate text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Equipe</div>
 											<div class="truncate text-[1.15rem] font-semibold text-white">{selectedTeam.name}</div>
-										</div>
-									</div>
+										</div> -->
+									<!-- </div> -->
 								{/if}
 
 								<div class="flex flex-col items-end gap-2">
-									<div class="rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 text-right backdrop-blur-sm">
-										<div class="text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Score</div>
+									<div class="rounded-[1.4rem] bg-slate-950/58 px-4 py-2.5 text-right backdrop-blur-sm mt-2">
+											<div class="text-[0.72rem] font-black uppercase tracking-[0.24em] text-slate-300">Score</div>
 										<div class="text-[1.15rem] font-semibold text-white">{myScore} pts</div>
 									</div>
 
-									{#if gameState.status === 'reading'}
+									<!-- {#if gameState.status === 'reading'}
 										<div class="animate-pulse rounded-full bg-slate-950/72 px-3 py-1 text-[0.68rem] font-black tracking-[0.22em] text-indigo-300 backdrop-blur-sm">
-											Reading
+												LECTURE
 										</div>
 									{:else}
 										<div
@@ -651,7 +708,7 @@
 										>
 											{gameState.timer}s
 										</div>
-									{/if}
+									{/if} -->
 								</div>
 								</div>
 
@@ -670,10 +727,10 @@
 										style="bottom: max(env(safe-area-inset-bottom), 1rem);"
 									>
 										{#if hasSubmitted}
-											Last action submitted{#if lastSubmittedTimeLeft !== null}
-												at {lastSubmittedTimeLeft}s left{/if}.
+											Derniere action envoyee{#if lastSubmittedTimeLeft !== null}
+												 a {lastSubmittedTimeLeft}s restantes{/if}.
 										{:else}
-											Not submitted yet.
+											Pas encore envoyee.
 										{/if}
 									</div>
 								{/if}
@@ -688,7 +745,7 @@
 									<div
 										class="animate-pulse rounded-full bg-slate-900/90 px-3 py-1 text-xs font-bold text-indigo-300 backdrop-blur-sm"
 									>
-										READING
+										LECTURE
 									</div>
 								{:else}
 									<div
@@ -718,10 +775,10 @@
 						{#if !contemplateMode}
 							<div class="rounded-2xl bg-slate-900 p-4 text-center text-sm text-slate-300">
 								{#if hasSubmitted}
-									Last action submitted{#if lastSubmittedTimeLeft !== null}
-										at {lastSubmittedTimeLeft}s left{/if}.
+									Derniere action envoyee{#if lastSubmittedTimeLeft !== null}
+										 a {lastSubmittedTimeLeft}s restantes{/if}.
 								{:else}
-									Not submitted yet.
+									Pas encore envoyee.
 								{/if}
 							</div>
 						{/if}
@@ -738,29 +795,29 @@
 				>
 					{#if gameState.status === 'reveal'}
 						<div class="text-4xl">🎞️</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Answer reveal</h2>
-						<p class="mt-1 text-sm text-slate-300">Look at the projector while the options are shown one by one.</p>
+						<h2 class="mt-2 text-2xl font-extrabold">Revelation des reponses</h2>
+						<p class="mt-1 text-sm text-slate-300">Regarde le projecteur pendant l'apparition des options.</p>
 					{:else if reviewFeedback === 'perfect'}
 						<div class="text-4xl">✅</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Perfect</h2>
-						<p class="mt-1 text-sm text-emerald-100">Max points!</p>
+						<h2 class="mt-2 text-2xl font-extrabold">Parfait</h2>
+						<p class="mt-1 text-sm text-emerald-100">Maximum de points !</p>
 					{:else if reviewFeedback === 'partial'}
 						<div class="text-4xl">🟨</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Good… but not that good</h2>
-						<p class="mt-1 text-sm text-amber-100">Close! You still scored.</p>
+						<h2 class="mt-2 text-2xl font-extrabold">Bien… mais pas parfait</h2>
+						<p class="mt-1 text-sm text-amber-100">C'etait proche, tu marques quand meme.</p>
 					{:else if reviewFeedback === 'wrong'}
 						<div class="text-4xl">❌</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Bad answer</h2>
-						<p class="mt-1 text-sm text-rose-100">Better luck next question.</p>
+						<h2 class="mt-2 text-2xl font-extrabold">Mauvaise reponse</h2>
+						<p class="mt-1 text-sm text-rose-100">Ce sera la suivante.</p>
 					{:else}
 						<div class="text-4xl">⏱️</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Round finished</h2>
-						<p class="mt-1 text-sm text-slate-300">Look at the projector for the answer.</p>
+						<h2 class="mt-2 text-2xl font-extrabold">Manche terminee</h2>
+						<p class="mt-1 text-sm text-slate-300">Regarde le projecteur pour la correction.</p>
 					{/if}
 
 					{#if gameState.status === 'review' && myLastPoints !== null}
 						<div class="mt-4 text-sm text-slate-100">
-							Points this round:
+							Points sur cette manche :
 							<span class="font-semibold">{myLastPoints}</span>
 							{#if qType === 'estimate' && estimateMaxPoints !== null}
 								<span class="text-slate-200"> / {estimateMaxPoints}</span>
@@ -771,16 +828,16 @@
 						</div>
 					{/if}
 					<div class="mt-3 rounded-xl bg-slate-950/60 px-4 py-3 text-sm text-slate-50">
-						Total score: <span class="font-semibold">{myScore}</span>
+						Score total : <span class="font-semibold">{myScore}</span>
 					</div>
 				</section>
 			{:else if gameState.status === 'finished'}
 				<section class="rounded-2xl bg-slate-900 p-5 text-center" in:fade>
 					<div class="text-3xl">🏁</div>
-					<h2 class="mt-2 text-xl font-semibold">Game over</h2>
-					<p class="mt-1 text-sm text-slate-300">Thanks for playing.</p>
+					<h2 class="mt-2 text-xl font-semibold">Partie terminee</h2>
+					<p class="mt-1 text-sm text-slate-300">Merci d'avoir joue.</p>
 					<div class="mt-4 rounded-xl bg-slate-950 px-4 py-3 text-sm text-slate-200">
-						Final score: <span class="font-semibold">{myScore}</span>
+						Score final : <span class="font-semibold">{myScore}</span>
 					</div>
 				</section>
 			{/if}

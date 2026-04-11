@@ -29,7 +29,7 @@
 	});
 </script>
 
-<div class="player-info-card {playerStatus}">
+	<div class="player-info-card {playerStatus}">
 	<div class="badge-shell" class:dimmed={!player.connected}>
 		<TeamBadge
 			teamId={String(player?.id ?? '')}
@@ -39,10 +39,10 @@
 			dimmed={!player.connected}
 		/>
 	</div>
-	<div class="text-block">
+	<!-- <div class="text-block">
 		<div class="team-name">{player.name}</div>
 		<div class="team-score">{player.score} pts</div>
-	</div>
+	</div> -->
 </div>
 
 <style>
@@ -50,26 +50,26 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.75rem;
-		margin: 0.25rem;
+		/* margin: 0.25rem; */
 		font-size: 1.6rem;
 		font-weight: 100;
-		border-radius: 2rem;
+		border-radius: 5rem;
 		height: 100%;
 		border: 0.125rem solid var(--border, #e5e7eb);
-		padding: 0.4rem 0.9rem;
+		/* padding: 0.4rem 0.9rem; */
 		background: rgba(0, 0, 0, 0.6);
 		transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 	}
 
 	.badge-shell {
-		height: 3.5rem;
-		width: 3.5rem;
+		height: 10.5rem;
+		width: 10.5rem;
 		flex-shrink: 0;
 		border-radius: 9999px;
 	}
 
 	.badge-shell.dimmed {
-		opacity: 0.65;
+		opacity: 0.9;
 	}
 
 	.text-block {

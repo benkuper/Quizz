@@ -1,5 +1,7 @@
 <script lang="ts">
 	import ProjectorQuestionRenderer from '$lib/components/quiz/projector/ProjectorQuestionRenderer.svelte';
+	import TeamBadgeOverlay from '$lib/components/projector/TeamBadgeOverlay.svelte';
+	import type { FocusedOptionOverlayData } from './focusedOptionOverlay';
 
 	type GameState = {
 		status?: string;
@@ -20,7 +22,8 @@
 		correctPlayers,
 		wrongPlayers,
 		sortedPlayers,
-		onPassiveFinished
+		onPassiveFinished,
+		onFocusImageChange
 	} = $props<{
 		gameState: GameState | null;
 		joinUrl: string | null;
@@ -29,29 +32,55 @@
 		wrongPlayers: any[];
 		sortedPlayers: any[];
 		onPassiveFinished: () => void;
+		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
 	}>();
+
+	const overlayPlayer = $derived.by(() => {
+		const teamId = String(gameState?.badgeOverlayTeamId ?? '').trim();
+		if (!teamId) return null;
+		return gameState?.players?.[teamId] ?? null;
+	});
+
+	const overlayTitle = $derived('Equipe en focus');
+	const overlaySubtitle = $derived.by(() => {
+		if (!overlayPlayer) return '';
+		return `${overlayPlayer.score ?? 0} pts`;
+	});
+	const overlaySpinMode = $derived('once');
+	const overlayKey = $derived.by(() => String(gameState?.badgeOverlayTeamId ?? ''));
 </script>
 
 <div class="screen">
+	{#if overlayPlayer}
+		<TeamBadgeOverlay
+			teamId={String(overlayPlayer.id ?? '')}
+			teamName={String(overlayPlayer.name ?? '')}
+			title={overlayTitle}
+			subtitle={overlaySubtitle}
+			spinMode={overlaySpinMode}
+			spinKey={overlayKey}
+		/>
+	{/if}
+
 	{#if !gameState}
-		<div class="loading">Connecting to Quiz Server...</div>
+		<div class="loading">Connexion au serveur du quiz…</div>
 	{:else if gameState.status === 'lobby'}
 		<div class="lobby">
-			<h1>Join the Quiz!</h1>
-			<p class="url">Go to <strong>{joinUrl}</strong></p>
+			<h1>Rejoignez le quiz !</h1>
+			<p class="url">Rendez-vous sur <strong>{joinUrl}</strong></p>
 
 			<div class="join-qr-container">
 				{#if joinQrDataUrl}
-					<img class="join-qr" src={joinQrDataUrl} alt="QR code to join the quiz" />
+					<img class="join-qr" src={joinQrDataUrl} alt="QR code pour rejoindre le quiz" />
 				{:else}
-					<div class="join-qr placeholder">Generating QR…</div>
+					<div class="join-qr placeholder">Generation du QR code…</div>
 				{/if}
 			</div>
 
 			<p class="count">
-				Teams ready:
+				Equipes pretes :
 				{Object.values(gameState.players || {}).filter((player: any) => player.enabled).length}
-				· Connected:
+				· Connectees :
 				{Object.values(gameState.players || {}).filter((player: any) => player.enabled && player.connected).length}
 			</p>
 		</div>
@@ -67,12 +96,13 @@
 				}}
 				optionReveal={gameState.optionReveal}
 				roundSummary={gameState.roundSummary}
+				onFocusImageChange={onFocusImageChange}
 				{onPassiveFinished}
 			/>
 		</div>
 	{:else if gameState.status === 'finished'}
 		<div class="leaderboard">
-			<h1>Winner!</h1>
+			<h1>Victoire !</h1>
 			{#if gameState.players}
 				<ol>
 					{#each sortedPlayers.slice(0, 5) as p: any}
@@ -83,7 +113,7 @@
 					{/each}
 				</ol>
 			{:else}
-				<p>No players</p>
+				<p>Aucune equipe</p>
 			{/if}
 		</div>
 	{/if}

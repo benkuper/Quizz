@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import type PartySocket from 'partysocket';
 	import ProjectorScreen from '$lib/components/projector/ProjectorScreen.svelte';
+	import FocusedOptionOverlay from '$lib/components/projector/FocusedOptionOverlay.svelte';
 	import { toDataURL } from 'qrcode';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
 	import { onMount } from 'svelte';
@@ -12,12 +13,19 @@
 	import { isKaraokeQuestionType, isPassiveQuestionType } from '$lib/quiz/questionTypes';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
+	type FocusedOptionOverlayData = {
+		label?: string;
+		text: string;
+		imageSrc: string;
+	};
+
 	let gameState: any = $state(null);
 	let socket: PartySocket | null = $state(null);
 	let lastAutoAdvanceQuestionId: string | null = $state(null);
 	let joinQrDataUrl: string | null = $state(null);
 	let screenOpacity = $state(1.0);
 	let beamOpacity = $state(1.0);
+	let focusedOptionOverlay = $state<FocusedOptionOverlayData | null>(null);
 
 	function appPath(path: string) {
 		const normalized = path.startsWith('/') ? path : `/${path}`;
@@ -47,6 +55,10 @@
 	);
 	const correctPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === true));
 	const wrongPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === false));
+	const showPlayers = $derived.by(() => {
+		if (isPassiveQuestionType(gameState?.question?.type)) return false;
+		return gameState?.status == 'reveal' || gameState?.status === 'question' || gameState?.status === 'review';
+	});
 
 	let sign1Text: string = $state('SNACKS');
 	let sign2Text: string = $state('HOT DOGS');
@@ -140,20 +152,20 @@
 		const questionType = gameState.question?.type;
 		switch (gameState.status) {
 			case 'lobby':
-				sign1Text = 'SNACKS';
-				sign2Text = 'HOT DOGS';
-				sign3Text = 'COLD DRINKS';
+				sign1Text = 'REJOINS';
+				sign2Text = 'LE';
+				sign3Text = 'QUIZ';
 				break;
 			case 'reading':
 				if (gameState.question) {
 					if (isKaraokeQuestionType(questionType)) {
 						sign1Text = 'KARA';
 						sign2Text = 'OKE';
-						sign3Text = 'READY';
+						sign3Text = 'PRET';
 					} else if (isPassiveQuestionType(questionType)) {
 						sign1Text = 'INTER';
 						sign2Text = 'MEDE';
-						sign3Text = 'SHOW';
+						sign3Text = 'VIDEO';
 					} else {
 						sign1Text = 'QUESTION';
 						sign2Text = `${gameState.actualQuestionIndex ?? ''}`;
@@ -166,7 +178,7 @@
 					if (isKaraokeQuestionType(questionType)) {
 						sign1Text = 'KARA';
 						sign2Text = 'OKE';
-						sign3Text = 'LIVE';
+						sign3Text = 'CHANT';
 					} else if (isPassiveQuestionType(questionType)) {
 						sign1Text = 'FILM';
 						sign2Text = 'EN';
@@ -199,7 +211,7 @@
 					let winner = sortedPlayers[0];
 					sign1Text = 'GAGNANT';
 					sign2Text = winner ? `${winner.name.toUpperCase()}` : '---';
-					sign3Text = `SCORE: ${winner ? winner.score : '---'}`;
+					sign3Text = `POINTS: ${winner ? winner.score : '---'}`;
 				}
 				break;
 			default:
@@ -221,6 +233,10 @@
 		lastAutoAdvanceQuestionId = qid;
 		socket.send(JSON.stringify({ type: 'passive_finished', questionId: qid }));
 	}
+
+	function handleFocusImageChange(payload: FocusedOptionOverlayData | null) {
+		focusedOptionOverlay = payload;
+	}
 </script>
 
 <main class="projector" style="--scale:{projectorScale};">
@@ -239,11 +255,12 @@
 			{correctPlayers}
 			{wrongPlayers}
 			{sortedPlayers}
+			onFocusImageChange={handleFocusImageChange}
 			onPassiveFinished={handlePassiveFinished}
 		/>
 	</div>
 
-	<div class="status-bar">
+	<div class="status-bar" class:is-hidden={!showPlayers}>
 		<!-- <div class="status-left">
 			<span class="status-dot" class:live={!!socket}></span>
 		</div> -->
@@ -277,6 +294,14 @@
 		alt=""
 		aria-hidden="true"
 	/>
+
+	{#if focusedOptionOverlay}
+		<FocusedOptionOverlay
+			label={focusedOptionOverlay.label}
+			text={focusedOptionOverlay.text}
+			imageSrc={focusedOptionOverlay.imageSrc}
+		/>
+	{/if}
 </main>
 
 <style>
@@ -441,7 +466,15 @@
 		background: rgba(203, 203, 203, 0.138);
 		backdrop-filter: blur(0.4rem);
 		font-size: 3rem;
-		transition: transform 240ms ease-in-out;
+		transition: bottom 240ms ease-in-out, opacity 240ms ease-in-out;
+		pointer-events: none;
+		opacity: 1;
+	}
+
+	
+	.status-bar.is-hidden{
+		opacity: 0;
+		bottom: -10rem;
 	}
 
 	.status-bar .players {
@@ -453,5 +486,7 @@
 		justify-content: center;
 		height: 100%;
 		padding: 0.5rem;
+		pointer-events: none;
 	}
+
 </style>

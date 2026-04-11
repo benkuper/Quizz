@@ -302,27 +302,27 @@
 			<div class="karaoke-clock">
 				{#if status === 'question'}
 					{#if hasLeadIn}
-						<span>Follow the lead-in</span>
+						<span>Suis l'intro</span>
 					{:else if karaokeState.afterLastPhrase}
-						<span>Final refrain...</span>
+						<span>Dernier refrain...</span>
 					{:else}
-						<span>{formatSeconds(timeLeftSec)} left</span>
+						<span>Encore {formatSeconds(timeLeftSec)}</span>
 					{/if}
 				{:else}
-					<span>Waiting for launch</span>
+					<span>En attente du lancement</span>
 				{/if}
 			</div>
 		</div>
 
 		{#if loading}
-			<div class="karaoke-placeholder">Loading lyrics...</div>
+			<div class="karaoke-placeholder">Chargement des paroles...</div>
 		{:else if error}
 			<div class="karaoke-placeholder karaoke-placeholder--error">{error}</div>
 		{:else if status === 'reading'}
 			<div class="karaoke-reading">
 				<div class="karaoke-reading-copy">
-					<p class="karaoke-reading-label">Warm-up</p>
-					<p>The music starts when the host launches the round.</p>
+					<p class="karaoke-reading-label">Echauffement</p>
+					<p>La musique demarre quand l'animateur lance la manche.</p>
 				</div>
 				{#if previewLines.length}
 					<div class="karaoke-preview">
@@ -374,7 +374,7 @@
 								</div>
 							{:else}
 								<div class="karaoke-wait">
-									<p class="karaoke-wait-label">Sing along</p>
+									<p class="karaoke-wait-label">Chantez</p>
 									<p class="karaoke-wait-time">...</p>
 								</div>
 							{/if}

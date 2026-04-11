@@ -8,12 +8,12 @@
 
 	let { status, question }: Props = $props();
 
-	const hint = $derived(String((question as any)?.vrwhack?.hint ?? 'Players look around with their phone and tap targets for points.'));
+	const hint = $derived(String((question as any)?.vrwhack?.hint ?? 'Les joueurs regardent autour d eux avec leur telephone et touchent les cibles pour marquer.'));
 </script>
 
-<div class="muted">Point & shoot (fake-VR)</div>
+<div class="muted">Vise et touche (faux mode VR)</div>
 <div class="muted">{hint}</div>
 
 {#if status === 'review'}
-	<div class="muted">Points = number of targets tapped before the timer ended.</div>
+	<div class="muted">Points = nombre de cibles touchees avant la fin du chrono.</div>
 {/if}

@@ -32,19 +32,6 @@
 	},
 	"questions": [
 		{
-			"id": "intro",
-			"type": "media",
-			"noreading": true,
-			"question": "Intro",
-			"media": {
-				"kind": "video",
-				"src": "intro.mp4",
-				"autoplay": true,
-				"muted": false,
-				"controls": false
-			}
-		},
-		{
 			"id": "age_tontons",
 			"type": "qcm",
 			"time": 30,
@@ -99,6 +86,19 @@
 			"answers": [2]
 		},
 		{
+			"id": "cocotier",
+			"type": "deblur",
+			"time": 25,
+			"question": "Kékifé sur la photo ?",
+			"options": [
+				"Il est derrière la caméra",
+				"Il prend la pose à côté de la tour de pise",
+				"Il fait un safari",
+				"Il chasse la noix de coco sauvage"
+			],
+			"answers": [4]
+		},
+		{
 			"id": "db2",
 			"type": "qcm",
 			"time": 25,
@@ -111,7 +111,7 @@
 			"type": "qcm",
 			"time": 25,
 			"question": ["Eric a été célèbre pour sa passion pour..."],
-			"options": ["Les Corn Flakes", "Les arts martiaux", "Les trucs de geek", "Lui-même"],
+			"options": ["Les Corn Flakes", "La cuir et la vitesse", "Les trucs de geek", "Lui-même"],
 			"answers": [3]
 		},
 		{
@@ -138,8 +138,7 @@
 				"Amérique du Sud",
 				"Australie / Océanie",
 				"Asie",
-				"Antarctique",
-				"Europe"
+				"Antarctique"
 			],
 			"answers": [3, 6]
 		},
@@ -179,19 +178,6 @@
 				"Il a vécu dans une communauté hippie"
 			],
 			"answers": [1, 2, 3]
-		},
-		{
-			"id": "cocotier",
-			"type": "deblur",
-			"time": 25,
-			"question": "Kékifé sur la photo ?",
-			"options": [
-				"Il est derrière la caméra",
-				"Il prend la pose à côté de la tour de pise",
-				"Il fait un safari",
-				"Il chasse la noix de coco sauvage"
-			],
-			"answers": [4]
 		},
 		{
 			"id": "pompes",
@@ -235,19 +221,6 @@
 				"artist": "Famille et amis",
 				"audio": "karaoke/karaoke.mp3",
 				"lyrics": "karaoke/karaoke.json"
-			}
-		},
-		{
-			"id": "outro",
-			"type": "media",
-			"time": 12,
-			"question": "Thanks for playing!",
-			"media": {
-				"kind": "video",
-				"src": "intro.mp4",
-				"autoplay": true,
-				"muted": false,
-				"controls": false
 			}
 		}
 	]

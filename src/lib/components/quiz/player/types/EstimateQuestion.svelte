@@ -86,8 +86,8 @@
 <div class="rounded-2xl bg-slate-900 p-4">
 	<div class="flex items-end justify-between gap-4">
 		<div>
-			<div class="text-sm text-slate-300">Pick a {label}</div>
-			<div class="mt-1 text-xs text-slate-400">From {minClamped} to {maxClamped}</div>
+			<div class="text-sm text-slate-300">Choisis {label === 'year' ? 'une annee' : 'une valeur'}</div>
+			<div class="mt-1 text-xs text-slate-400">De {minClamped} a {maxClamped}</div>
 		</div>
 		<div class="rounded-xl bg-slate-950 px-3 py-2 text-lg font-extrabold text-slate-50">
 			{unit === 'year' ? Math.round(displayValue) : displayValue}
@@ -125,7 +125,7 @@
 			max={maxClamped}
 			{step}
 			value={displayValue}
-			aria-label={`Estimate ${label}`}
+			aria-label={`Estimation ${label}`}
 			oninput={(e) => setValue(Number((e.currentTarget as HTMLInputElement).value))}
 		/>
 	</div>

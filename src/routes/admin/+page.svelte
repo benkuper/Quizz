@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type PartySocket from 'partysocket';
 	import { createQuizSocket } from '$lib/partykit/client.svelte';
-	import { getTeamBadgeUrl } from '$lib/quiz/teamAssets';
+	import TeamBadge from '$lib/components/shared/TeamBadge.svelte';
 	import {
 		isPerfectMatchQuestionType,
 		isQcmLikeQuestionType
@@ -20,7 +20,6 @@
 		time?: number;
 	}> = $state([]);
 	let connected = $state(false);
-	let missingBadgeIds = $state([] as string[]);
 
 	$effect(() => {
 		const s = createQuizSocket({ role: 'admin' });
@@ -86,6 +85,14 @@
 		socket?.send(JSON.stringify({ type: 'admin_set_team_enabled', teamId: id, enabled }));
 	}
 
+	function toggleBadgeOverlay(teamId: string) {
+		socket?.send(JSON.stringify({ type: 'admin_toggle_badge_overlay', teamId }));
+	}
+
+	function hideBadgeOverlay() {
+		socket?.send(JSON.stringify({ type: 'admin_hide_badge_overlay' }));
+	}
+
 	function clearLocalStorage() {
 		if (!confirm('Clear local storage and reload? This only affects this admin browser.')) return;
 		localStorage.clear();
@@ -105,16 +112,6 @@
 		if (sec < 60) return `${sec}s ago`;
 		const min = Math.round(sec / 60);
 		return `${min}m ago`;
-	}
-
-	function markBadgeMissing(teamId: string) {
-		if (missingBadgeIds.includes(teamId)) return;
-		missingBadgeIds = [...missingBadgeIds, teamId];
-	}
-
-	function teamBadgeUrl(teamId: string) {
-		if (missingBadgeIds.includes(teamId)) return null;
-		return getTeamBadgeUrl(teamId);
 	}
 
 	const status = $derived(String(gameState?.status ?? ''));
@@ -145,6 +142,7 @@
 	);
 	const enabledTeamsCount = $derived(teamEntries.filter((team: any) => team.enabled).length);
 	const connectedTeamsCount = $derived(teamEntries.filter((team: any) => team.enabled && team.connected).length);
+	const badgeOverlayTeamId = $derived(String(gameState?.badgeOverlayTeamId ?? ''));
 
 	const currentQuestionLine = $derived.by(() => {
 		const q = gameState?.question;
@@ -347,6 +345,22 @@
 					</svg>
 					<span class="hidden sm:inline">Storage</span>
 				</button>
+
+				<button class={btnNeutral} onclick={hideBadgeOverlay} title="Hide projector badge overlay" disabled={!badgeOverlayTeamId}>
+					<svg
+						viewBox="0 0 24 24"
+						class="h-4 w-4"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M3 3l18 18" />
+						<path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
+						<path d="M9.88 5.09A10.94 10.94 0 0 1 12 5c5 0 9.27 3.11 11 7-0.55 1.24-1.38 2.39-2.41 3.36" />
+						<path d="M6.61 6.61C4.62 7.9 3.12 9.79 2 12c1.73 3.89 6 7 10 7 1.61 0 3.13-0.32 4.5-0.89" />
+					</svg>
+					<span class="hidden sm:inline">Hide overlay</span>
+				</button>
 			</div>
 		</div>
 
@@ -453,11 +467,7 @@
 									<div class="min-w-0">
 										<div class="flex items-center gap-3">
 											<div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/20">
-												{#if teamBadgeUrl(p.id)}
-													<img src={teamBadgeUrl(p.id)!} alt={p.name} class:grayscale={!p.connected} class="h-full w-full object-cover" onerror={() => markBadgeMissing(p.id)} />
-												{:else}
-													<span class="text-xs font-black uppercase tracking-[0.18em] text-slate-200">{p.name.split(/\s+/).slice(0, 2).map((part: string) => part[0]?.toUpperCase() ?? '').join('')}</span>
-												{/if}
+												<TeamBadge teamId={String(p.id)} teamName={String(p.name)} dimmed={!p.connected} />
 											</div>
 											<div class="min-w-0">
 												<div class="flex flex-wrap items-center gap-2">
@@ -471,6 +481,9 @@
 
 												<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] text-slate-400">
 													<span>{p.enabled ? 'Playing' : 'Disabled'}</span>
+													{#if badgeOverlayTeamId === String(p.id)}
+														<span class="text-indigo-300">Overlay visible</span>
+													{/if}
 													{#if gameState.status === 'question' && p.lastAnswerTimeLeft !== null && p.lastAnswerTimeLeft !== undefined}
 														<span title="Time left when submitted">{p.lastAnswerTimeLeft}s left</span>
 													{/if}
@@ -483,6 +496,13 @@
 									</div>
 
 									<div class="flex shrink-0 flex-col items-end gap-2">
+										<button
+											onclick={() => toggleBadgeOverlay(String(p.id))}
+											class={badgeOverlayTeamId === String(p.id) ? btnPrimary : btnNeutral}
+											title={badgeOverlayTeamId === String(p.id) ? 'Hide overlay for this team' : 'Show overlay for this team'}
+										>
+											{badgeOverlayTeamId === String(p.id) ? 'Hide overlay' : 'Show overlay'}
+										</button>
 										<button onclick={() => toggleTeamEnabled(p.id, !p.enabled)} class={p.enabled ? btnNeutral : btnPrimary} title={p.enabled ? 'Disable team' : 'Enable team'}>{p.enabled ? 'Disable' : 'Enable'}</button>
 										{#if p.connected}
 											<button onclick={() => disconnectTeam(p.id, p.name)} class={btnDanger} title="Disconnect team">Disconnect</button>

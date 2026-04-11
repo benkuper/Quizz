@@ -25,7 +25,7 @@
 
 <div class="question-renderer">
 	{#if !question}
-		<div class="rounded-2xl bg-slate-900 p-4 text-center text-slate-200">Loading…</div>
+		<div class="rounded-2xl bg-slate-900 p-4 text-center text-slate-200">Chargement…</div>
 	{:else if isQcmLikeQuestionType(type)}
 		<QcmQuestion question={question as any} value={value as any} onChange={onChange as any} />
 	{:else if type === 'estimate'}
@@ -56,7 +56,7 @@
 		/>
 	{:else}
 		<div class="rounded-2xl bg-slate-900 p-4">
-			<div class="text-sm text-slate-300">Unsupported question type</div>
+			<div class="text-sm text-slate-300">Type de question non pris en charge</div>
 			<div class="mt-2 text-lg font-semibold">{type}</div>
 		</div>
 	{/if}

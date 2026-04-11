@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GameStatus, KaraokePlaybackSync, QuizQuestion, OptionRevealState } from '$lib/quiz/types';
+	import type { FocusedOptionOverlayData } from '../../projector/focusedOptionOverlay';
 	import QcmView from './types/QcmView.svelte';
 	import DeblurView from './types/DeblurView.svelte';
 	import SortingView from './types/SortingView.svelte';
@@ -19,9 +20,19 @@
 		roundSummary?: any;
 		timer?: number;
 		onPassiveFinished?: () => void;
+		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
 	};
 
-	let { status, question, karaokeSync, optionReveal, roundSummary, timer = 0, onPassiveFinished }: Props = $props();
+	let {
+		status,
+		question,
+		karaokeSync,
+		optionReveal,
+		roundSummary,
+		timer = 0,
+		onPassiveFinished,
+		onFocusImageChange
+	}: Props = $props();
 	const type = $derived(String(question?.type || ''));
 
 	function text(q: QuizQuestion) {
@@ -31,7 +42,7 @@
 
 <div class="question-renderer">
 	{#if !question}
-		<div class="loading">Loading question…</div>
+		<div class="loading">Chargement de la question…</div>
 	{:else}
 		{#if !isPassiveQuestionType(type)}
 			<h2 class="q-text">{text(question)}</h2>
@@ -44,7 +55,7 @@
 		{:else if type === 'deblur'}
 			<DeblurView {status} question={question as any} {optionReveal} {timer} />
 		{:else if isQcmLikeQuestionType(type)}
-			<QcmView {status} question={question as any} {optionReveal} />
+			<QcmView {status} question={question as any} {optionReveal} {onFocusImageChange} />
 		{:else if type === 'sorting'}
 			<SortingView {status} question={question as any} {optionReveal} />
 		{:else if type === 'estimate'}
@@ -63,7 +74,7 @@
 		{:else if type === 'vrwhack'}
 			<VrWhackView {status} question={question as any} />
 		{:else}
-			<div class="muted">Unsupported type: {type}</div>
+			<div class="muted">Type non pris en charge : {type}</div>
 		{/if}
 	{/if}
 </div>

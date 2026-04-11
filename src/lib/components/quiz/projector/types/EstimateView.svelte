@@ -46,7 +46,7 @@
 	}
 </script>
 
-<div class="muted">Estimate the {unit === 'year' ? 'year' : 'value'}</div>
+<div class="muted">Estime {unit === 'year' ? "l'annee" : 'la valeur'}</div>
 
 <div class="correct-answer">
 	<div class="relative mt-4">
@@ -86,12 +86,12 @@
 	</div>
 
 	{#if status !== 'review'}
-		<div class="muted" style="margin-top: 0.75rem">(Correct year hidden)</div>
+		<div class="muted" style="margin-top: 0.75rem">(Annee correcte masquee)</div>
 	{/if}
 
 	{#if status === 'review' && guesses.length > 0}
 		<div class="guess-legend">
-			<div class="muted" style="margin-top: 0.75rem">What people chose</div>
+			<div class="muted" style="margin-top: 0.75rem">Choix des equipes</div>
 			<div class="guess-list">
 				{#each guesses as g (g.value)}
 					<div class="guess-row">

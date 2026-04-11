@@ -814,10 +814,10 @@
 		bind:this={hudEl}
 	>
 		<div class="pointer-events-auto rounded-2xl bg-black/50 px-4 py-3 backdrop-blur">
-			<div class="text-sm font-semibold text-slate-100">Point & Shoot</div>
+			<div class="text-sm font-semibold text-slate-100">Vise et touche</div>
 			<div class="mt-1 text-xs text-slate-300">{hint}</div>
 			<div class="mt-2 text-xs text-slate-200">
-				Score: <span class="font-semibold text-white">{hitCount}</span>
+				Score : <span class="font-semibold text-white">{hitCount}</span>
 			</div>
 			<div class="mt-2 flex items-center gap-2">
 				<button
@@ -825,34 +825,34 @@
 					class="pointer-events-auto rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/15"
 					onclick={enableMotion}
 				>
-					Enable motion
+					Activer le gyroscope
 				</button>
 				<div class="text-xs text-slate-300">
 					{#if usingMotion}
 						{#if motionSeen}
-							Motion active
+							Gyroscope actif
 						{:else if motionError}
 							{motionError}
 						{:else}
-							Waiting for sensor…
+							En attente du capteur…
 						{/if}
 					{:else if motionDenied}
-						Motion denied (drag to look)
+						Acces refuse (glisse pour regarder)
 					{:else}
-						Drag to look
+						Glisse pour regarder
 					{/if}
 				</div>
 			</div>
 			{#if usingMotion && motionSeen}
 				<div class="mt-2 text-[0.7rem] text-slate-400">
-					Updated {Math.max(0, Math.round((Date.now() - lastMotionAt) / 1000))}s ago
+					Mis a jour il y a {Math.max(0, Math.round((Date.now() - lastMotionAt) / 1000))}s
 				</div>
 			{/if}
 		</div>
 
 		<div class="pointer-events-none rounded-2xl bg-black/40 px-4 py-3 text-right backdrop-blur">
-			<div class="text-xs text-slate-300">Tap the target sphere</div>
-			<div class="text-xs text-slate-400">Each hit = +1</div>
+			<div class="text-xs text-slate-300">Touche la sphere cible</div>
+			<div class="text-xs text-slate-400">Chaque touche = +1</div>
 		</div>
 	</div>
 </div>

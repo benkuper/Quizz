@@ -1,11 +1,11 @@
 <script lang="ts">
 	import ProjectorQuestionRenderer from '$lib/components/quiz/projector/ProjectorQuestionRenderer.svelte';
 	import TeamBadgeOverlay from '$lib/components/projector/TeamBadgeOverlay.svelte';
-	import type { FocusedOptionOverlayData } from './focusedOptionOverlay';
 
 	type GameState = {
 		status?: string;
 		players?: Record<string, any>;
+		badgeOverlayTeamId?: string | null;
 		question?: any;
 		optionReveal?: any;
 		roundSummary?: any;
@@ -15,25 +15,33 @@
 		questionStartedAt?: number | null;
 	};
 
-	const {
-		gameState,
-		joinUrl,
-		joinQrDataUrl,
-		correctPlayers,
-		wrongPlayers,
-		sortedPlayers,
-		onPassiveFinished,
-		onFocusImageChange
-	} = $props<{
+	type FocusedOptionOverlayData = {
+		label?: string;
+		text: string;
+		imageSrc: string;
+	};
+
+	type Props = {
 		gameState: GameState | null;
 		joinUrl: string | null;
 		joinQrDataUrl: string | null;
 		correctPlayers: any[];
 		wrongPlayers: any[];
 		sortedPlayers: any[];
-		onPassiveFinished: () => void;
 		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
-	}>();
+		onPassiveFinished: () => void;
+	};
+
+	let {
+		gameState,
+		joinUrl,
+		joinQrDataUrl,
+		correctPlayers,
+		wrongPlayers,
+		sortedPlayers,
+		onFocusImageChange,
+		onPassiveFinished
+	}: Props = $props();
 
 	const overlayPlayer = $derived.by(() => {
 		const teamId = String(gameState?.badgeOverlayTeamId ?? '').trim();
@@ -41,7 +49,6 @@
 		return gameState?.players?.[teamId] ?? null;
 	});
 
-	const overlayTitle = $derived('Equipe en focus');
 	const overlaySubtitle = $derived.by(() => {
 		if (!overlayPlayer) return '';
 		return `${overlayPlayer.score ?? 0} pts`;
@@ -55,7 +62,6 @@
 		<TeamBadgeOverlay
 			teamId={String(overlayPlayer.id ?? '')}
 			teamName={String(overlayPlayer.name ?? '')}
-			title={overlayTitle}
 			subtitle={overlaySubtitle}
 			spinMode={overlaySpinMode}
 			spinKey={overlayKey}
@@ -66,12 +72,12 @@
 		<div class="loading">Connexion au serveur du quiz…</div>
 	{:else if gameState.status === 'lobby'}
 		<div class="lobby">
-			<h1>Rejoignez le quiz !</h1>
+			<h1>Rejoignez le quizz !</h1>
 			<p class="url">Rendez-vous sur <strong>{joinUrl}</strong></p>
 
 			<div class="join-qr-container">
 				{#if joinQrDataUrl}
-					<img class="join-qr" src={joinQrDataUrl} alt="QR code pour rejoindre le quiz" />
+					<img class="join-qr" src={joinQrDataUrl} alt="QR code pour rejoindre le quizz" />
 				{:else}
 					<div class="join-qr placeholder">Generation du QR code…</div>
 				{/if}
@@ -96,7 +102,7 @@
 				}}
 				optionReveal={gameState.optionReveal}
 				roundSummary={gameState.roundSummary}
-				onFocusImageChange={onFocusImageChange}
+				{onFocusImageChange}
 				{onPassiveFinished}
 			/>
 		</div>
@@ -189,19 +195,13 @@
 		font-size: 1.8rem;
 	}
 
-	.question-view,
-	.reading-view,
-	.reveal-view,
-	.review-view {
+	.question-view {
 		width: 100%;
-		height: 100%;
-		min-height: 0;
 		max-width: 100%;
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		overflow: hidden;
 	}
 
 	:global(.q-text) {

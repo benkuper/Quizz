@@ -1,21 +1,17 @@
 {
 	"teams": {
-		"chantal_henri": "Team Chantal Henri",
-		"charlie": "Team Charlie",
-		"charlotte": "Team Charlotte",
-		"denis_amina": "Team Denis Amina",
-		"elodie": "Team Elodie",
-		"eric": "Team Eric",
-		"fabienne": "Team Fabienne",
-		"florence": "Team Florence",
-		"fred": "Team Fred",
-		"jean": "Team Jean",
-		"julien": "Team Julien",
-		"karine": "Team Karine",
-		"perrine": "Team Perrine",
-		"philippe": "Team Philippe",
-		"susan": "Team Susan",
-		"triplettes": "Team Triplettes"
+		"chantal_henri": "La Bonne Equipe",
+		"charlie": "Les Mégères",
+		"charlotte": "Les MBC",
+		"elodie": "Gernezzz",
+		"florence": "Maison d'en face",
+		"jean": "Karachapi",
+		"julien": "Les Levrettes",
+		"karine": "Ma femme et moi",
+		"perrine": "Les Karambars",
+		"philippe": "Tontons flingueurs",
+		"susan": "Bonnie and Clyde",
+		"triplettes": "Gigi.com"
 	},
 	"questionTypes": {
 		"media": "Media Interlude",
@@ -31,6 +27,7 @@
 		"karaoke": "Karaoke Interlude"
 	},
 	"questions": [
+		
 		{
 			"id": "age_tontons",
 			"type": "qcm",
@@ -41,8 +38,22 @@
 			"answers": [2]
 		},
 		{
+			"id": "voler",
+			"type": "qcm",
+			"time": 30,
+			"question": "Eric aime voler...",
+			"options": [
+				"Il est incapable de résister à piquer de menus objets souvenirs dans les restaurants",
+				"Il a fait du parapente",
+				"Il a piloté des avions",
+				"Il pratique le Wingsuit"
+			],
+			"answers": [2, 3]
+		},
+		{
 			"id": "cadillac",
 			"type": "qcm",
+			"time": 30,
 			"question": "Dans quel véhicule Eric a-t-il eu le privilège de passer une journée entière ?",
 			"options": [
 				"Le Redoutable, célèbre sous-marin nucléaire Français",
@@ -54,10 +65,11 @@
 		},
 		{
 			"id": "autographe",
+			"time": 30,
 			"introSound": "engine.wav",
 			"vibration": [50, 500, 50, 100, 50, 100, 1000],
 			"type": "qcm",
-			"question": "J'ai déjà signé des autographes en tant que...",
+			"question": "Eric a déjà signé des autographes en tant que...",
 			"options": [
 				"Alain (de loin)",
 				"Robert Redford (mais plutôt Robert que Redford)",
@@ -66,9 +78,11 @@
 			],
 			"answers": [3]
 		},
+		
 		{
 			"id": "evenements",
 			"type": "sorting",
+			"time": 60,
 			"question": "Classez ces événements dans l'ordre chronologique",
 			"options": [
 				"Son mariage avec Fabienne",
@@ -81,6 +95,7 @@
 		{
 			"id": "antonio",
 			"type": "qcm",
+			"time": 30,
 			"question": "Une raclette sans fromage c'est comme une bibliothèque sans...",
 			"options": ["Francisco", "Antonio", "Gepetto", "Robert"],
 			"answers": [2]
@@ -88,7 +103,7 @@
 		{
 			"id": "cocotier",
 			"type": "deblur",
-			"time": 25,
+			"time": 30,
 			"question": "Kékifé sur la photo ?",
 			"options": [
 				"Il est derrière la caméra",
@@ -101,37 +116,25 @@
 		{
 			"id": "db2",
 			"type": "qcm",
-			"time": 25,
+			"time": 30,
 			"nolight": true,
 			"question": "Problème Electrique : ca a l'air d'être un problème dans la base de données.. seul Eric peut nous sauver ! Mais quelle est donc cette technologie ?",
-			"options": ["DBZ", "DB2", "R2D2", "H2G2"],
+			"options": ["MK2", "DB2", "R2D2", "H2G2"],
 			"answers": [2]
 		},
 		{
 			"id": "magazine",
 			"type": "qcm",
-			"time": 25,
+			"time": 30,
 			"question": ["Eric a été célèbre pour sa passion pour..."],
-			"options": ["Les Corn Flakes", "La cuir et la vitesse", "Les trucs de geek", "Lui-même"],
+			"options": ["Les Corn Flakes", "Le cuir et la vitesse", "Les technologies du futur", "Lui-même"],
 			"answers": [3]
 		},
-		{
-			"id": "voler",
-			"type": "qcm",
-			"time": 25,
-			"question": "Eric aimer voler...",
-			"options": [
-				"Il est incapable de résister à piquer de menus objets souvenirs dans les restaurants",
-				"Il a fait du parapente",
-				"Il a piloté des avions",
-				"Il pratique le Wingsuit"
-			],
-			"answers": [2, 3]
-		},
+		
 		{
 			"id": "continent",
 			"type": "qcm",
-			"time": 25,
+			"time": 30,
 			"question": "2 de ces continents n'ont jamais été foulés par les pieds d'Eric, lesquels ?",
 			"options": [
 				"Afrique",
@@ -146,11 +149,11 @@
 		{
 			"id": "militaire",
 			"type": "burger",
-			"time": 25,
+			"time": 30,
 			"question": "Questions militaires",
 			"options": [
 				"Boisson favorite (et surconsommée)",
-				"Couleur de la cravate : marron (caca)",
+				"Couleur de la cravate",
 				"Nom des camions dans lesquels nous travaillions (plus ou moins)",
 				"Grade du commandant du camp",
 				"Chanson de la troupe ",
@@ -170,8 +173,8 @@
 		{
 			"id": "travail",
 			"type": "qcm",
-			"time": 25,
-			"question": " Avant de devenir le geek qu'on connait … Eric a-t-il ?",
+			"time": 30,
+			"question": " Avant de devenir le geek qu'on connait, Eric a eu d'autres occupations...",
 			"options": [
 				"Il a été épicier",
 				"Il a travaillé dans l'or",
@@ -183,7 +186,7 @@
 		{
 			"id": "pompes",
 			"type": "deblur",
-			"time": 25,
+			"time": 30,
 			"question": "Kékifé sur la photo ?",
 			"options": [
 				"Il prépare un concours de natation",

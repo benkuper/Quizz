@@ -10,14 +10,16 @@
 		y?: number;
 		size?: number;
 		flicker?: number;
+		lit?: boolean;
 	}
 
-	let { text, variant = 'yellow', x = 0, y = 0, size = 1, flicker = 5 }: Props = $props();
+	let { text, variant = 'yellow', x = 0, y = 0, size = 1, flicker = 5, lit = true }: Props = $props();
 </script>
 
 <div class="perspective-container">
 	<div
 		class="sign-container {variant}"
+		class:is-unlit={!lit}
 		style="--x: {x}rem; --y: {y}rem; --size: {3 * size}rem; --flicker: {flicker}s;"
 	>
 		<div class="glow-text">{text}</div>
@@ -59,7 +61,10 @@
 		transform: translate3d(var(--x), var(--y), -11rem) rotateY(-4deg);
 		transition:
 			transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-			box-shadow 240ms;
+			box-shadow 240ms,
+			border-color 180ms ease,
+			color 180ms ease,
+			opacity 180ms ease;
 		will-change: transform;
 		width: 180px;
 		height: 50px;
@@ -70,6 +75,14 @@
 		padding: 0.2em 0.4em;
 
 		animation: flicker var(--flicker) infinite;
+	}
+
+	.sign-container.is-unlit {
+		animation: none;
+		box-shadow: none;
+		text-shadow: none;
+		opacity: 0.9;
+		background: rgba(0, 0, 0, 0.28);
 	}
 
 	@keyframes flicker {
@@ -106,6 +119,11 @@
 		animation: pingpong 4s ease-in-out infinite alternate;
 	}
 
+	.sign-container.is-unlit .glow-text {
+		animation: none;
+		transform: none;
+	}
+
 	@keyframes pingpong {
 		to {
 			transform: translateX(calc(180px - 100%));
@@ -126,6 +144,11 @@
 			inset 0 0 30px rgba(248, 160, 6, 0.843);
 	}
 
+	.yellow.is-unlit {
+		border-color: rgba(212, 160, 23, 0.35);
+		color: rgba(92, 72, 14, 0.9);
+	}
+
 	/* --- Variant: RED (Hot Dogs) --- */
 	.red {
 		/* border-color: #b62121; */
@@ -141,6 +164,11 @@
 			0 0 80px #ed2f00;
 	}
 
+	.red.is-unlit {
+		border-color: rgba(255, 59, 59, 0.35);
+		color: rgba(104, 42, 28, 0.9);
+	}
+
 	/* --- Variant: BLUE (Cold Drinks) --- */
 	.blue {
 		letter-spacing: -0.1ch;
@@ -154,5 +182,10 @@
 			0 0 10px #41a4a4,
 			0 0 20px #008b8b,
 			0 0 40px #008b8b;
+	}
+
+	.blue.is-unlit {
+		border-color: rgba(0, 139, 139, 0.35);
+		color: rgba(40, 79, 86, 0.95);
 	}
 </style>

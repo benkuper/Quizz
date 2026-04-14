@@ -97,25 +97,21 @@
 
 	<div class="burger-columns">
 		<section class="burger-column">
-			<div class="column-heading">Questions</div>
 			<RevealableOptions
 				options={questionItems}
 				reveal={questionReveal}
 				labels={questionLabels}
 				layout="sidebar"
-				textScale="large"
 				showLabels
 			/>
 		</section>
 
 		<section class="burger-column">
-			<div class="column-heading">Answers</div>
 			<RevealableOptions
 				options={answerItems}
 				reveal={answerReveal}
 				labels={answerLabels}
 				layout="sidebar"
-				textScale="large"
 				showLabels
 			/>
 		</section>
@@ -128,8 +124,7 @@
 		flex-direction: column;
 		gap: 0.45rem;
 		width: min(99%, 118rem);
-		height: 100%;
-		max-height: 100%;
+		height: 480px;
 		margin: 0 auto;
 		padding: 0.3rem 0.45rem 0.45rem;
 		box-sizing: border-box;
@@ -158,15 +153,6 @@
 		gap: 0.3rem;
 		min-height: 0;
 		overflow: hidden;
-	}
-
-	.column-heading {
-		text-align: center;
-		font-size: clamp(0.68rem, 0.9vw, 0.82rem);
-		font-weight: 700;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: rgba(255, 255, 255, 0.72);
 	}
 
 	@media (max-width: 64rem) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { getTeamBadgeBackUrl, getTeamBadgeUrl } from '$lib/quiz/teamAssets';
 
 	const EDGE_DEPTHS = ['0.18rem', '0.12rem', '0.06rem', '0rem', '-0.06rem', '-0.12rem', '-0.18rem'];
@@ -34,6 +35,7 @@
 
 	let badgeMissing = $state(false);
 	let oneShotCycle = $state(0);
+	let lastTriggeredSpinKey: string | number | null = null;
 
 	
 	const frontUrl = $derived.by(() => getTeamBadgeUrl(String(teamId ?? '')));
@@ -70,9 +72,18 @@
 	const hasArtwork = $derived(Boolean(frontUrl) && !badgeMissing);
 
 	$effect(() => {
-		if (!isOneShotSpin) return;
-		spinKey;
-		oneShotCycle += 1;
+		if (!isOneShotSpin) {
+			lastTriggeredSpinKey = null;
+			return;
+		}
+
+		const currentSpinKey = spinKey;
+		if (currentSpinKey === lastTriggeredSpinKey) return;
+
+		lastTriggeredSpinKey = currentSpinKey;
+		untrack(() => {
+			oneShotCycle += 1;
+		});
 	});
 </script>
 
@@ -86,8 +97,22 @@
 	{#if hasArtwork}
 		{#if isFlatRender}
 			{#key `${teamId}:${oneShotCycle}`}
-				<div class="badge-flat">
-					<img src={frontUrl!} alt={teamName || teamId} class="badge-image badge-image-flat" onerror={() => (badgeMissing = true)} />
+				<div class="badge-flat-body">
+					<div class="badge-flat-face badge-flat-face-front">
+						<img src={frontUrl!} alt={teamName || teamId} class="badge-image badge-image-flat" onerror={() => (badgeMissing = true)} />
+						<svg class="badge-ribbon badge-ribbon-flat" viewBox="0 0 1280 1280" aria-hidden="true">
+							<defs>
+								<path id={ribbonPathId} d={DEFAULT_RIBBON_PATH}></path>
+							</defs>
+
+							<text class="badge-ribbon-text badge-ribbon-text-flat" text-anchor="middle" textLength="700" lengthAdjust="spacingAndGlyphs">
+								<textPath href={`#${ribbonPathId}`} startOffset="50%">{ribbonLabel}</textPath>
+							</text>
+						</svg>
+					</div>
+					<div class="badge-flat-face badge-flat-face-back">
+						<img src={backUrl} alt="" aria-hidden="true" class="badge-image badge-image-flat-back" />
+					</div>
 				</div>
 			{/key}
 		{:else}
@@ -147,15 +172,11 @@
 		transform-style: preserve-3d;
 	}
 
-	.badge-flat {
+	.badge-flat-body {
 		position: relative;
 		width: 100%;
 		height: 100%;
-		border-radius: 999rem;
-		overflow: hidden;
-		background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.22), rgba(15, 23, 42, 0.9));
-		border: 0.12rem solid rgba(255, 255, 255, 0.16);
-		box-shadow: 0 1.1rem 2.1rem rgba(0, 0, 0, 0.28);
+		transform-style: preserve-3d;
 	}
 
 	.badge-scene.spinning .badge-body {
@@ -166,12 +187,31 @@
 		animation: badge-spin-once var(--badge-spin-duration) cubic-bezier(0.1, 1, 0.2, 1) 1 both;
 	}
 
-	.badge-scene.spinning .badge-flat {
-		animation: badge-flat-spin var(--badge-spin-duration) linear infinite;
+	.badge-scene.spinning .badge-flat-body {
+		animation: badge-spin var(--badge-spin-duration) linear infinite;
 	}
 
-	.badge-scene.spinning-once .badge-flat {
-		animation: badge-flat-spin-once var(--badge-spin-duration) cubic-bezier(0.1, 1, 0.2, 1) 1 both;
+	.badge-scene.spinning-once .badge-flat-body {
+		animation: badge-spin-once var(--badge-spin-duration) cubic-bezier(0.1, 1, 0.2, 1) 1 both;
+	}
+
+	.badge-flat-face {
+		position: absolute;
+		inset: 0;
+		border-radius: 999rem;
+		overflow: hidden;
+		backface-visibility: hidden;
+		background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.22), rgba(15, 23, 42, 0.9));
+		border: 0.12rem solid rgba(255, 255, 255, 0.16);
+		box-shadow: 0 1.1rem 2.1rem rgba(0, 0, 0, 0.28);
+	}
+
+	.badge-flat-face-front {
+		transform: translateZ(0.08rem);
+	}
+
+	.badge-flat-face-back {
+		transform: rotateY(180deg) translateZ(0.08rem);
 	}
 
 	.badge-layer {
@@ -212,7 +252,11 @@
 	}
 
 	.badge-image-flat {
-		object-fit: cover;
+		object-fit: contain;
+	}
+
+	.badge-image-flat-back {
+		object-fit: contain;
 	}
 
 	.badge-shine-container,
@@ -287,6 +331,15 @@
 		stroke-linejoin: round;
 	}
 
+	.badge-ribbon-flat {
+		z-index: 2;
+	}
+
+	.badge-ribbon-text-flat {
+		font-size: 5.9rem;
+		stroke-width: 1.05rem;
+	}
+
 	.badge-fallback {
 		display: grid;
 		place-items: center;
@@ -318,30 +371,6 @@
 
 		to {
 			transform: var(--badge-spin-transform);
-		}
-	}
-
-	@keyframes badge-flat-spin {
-		from {
-			transform: rotate(0deg);
-		}
-
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	@keyframes badge-flat-spin-once {
-		0% {
-			transform: rotate(0deg) scale(0.94);
-		}
-
-		20% {
-			transform: rotate(120deg) scale(1);
-		}
-
-		100% {
-			transform: rotate(1080deg) scale(1);
 		}
 	}
 
@@ -394,9 +423,9 @@
 	@media (prefers-reduced-motion: reduce) {
 		.badge-scene.spinning .badge-body,
 		.badge-scene.spinning .badge-shine,
-		.badge-scene.spinning .badge-flat,
+		.badge-scene.spinning .badge-flat-body,
 		.badge-scene.spinning-once .badge-body,
-		.badge-scene.spinning-once .badge-flat,
+		.badge-scene.spinning-once .badge-flat-body,
 		.badge-scene.spinning-once .badge-shine {
 			animation: none;
 		}

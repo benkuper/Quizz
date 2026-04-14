@@ -142,6 +142,7 @@
 	const qType = $derived(String(q?.type || ''));
 	const qcmUsesPhoneShell = $derived.by(() => {
 		if (!isQcmLikeQuestionType(qType)) return false;
+		if (qType === 'deblur') return false;
 		const options = (q as any)?.options;
 		const count = Array.isArray(options) ? options.length : 0;
 		return count > 0 && count <= 4;
@@ -150,6 +151,12 @@
 		joined &&
 		(gameState?.status === 'question' || gameState?.status === 'reading') &&
 		qcmUsesPhoneShell
+	);
+	const useWideQuestionLayout = $derived(
+		joined &&
+		qType === 'deblur' &&
+		(gameState?.status === 'question' || gameState?.status === 'reading') &&
+		!qcmUsesPhoneShell
 	);
 
 	const estimateMaxPoints = $derived.by(() => {
@@ -165,6 +172,21 @@
 		return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
 	});
 
+	const reviewMaxPoints = $derived.by(() => {
+		if (qType === 'estimate') return estimateMaxPoints ?? 10;
+		if (qType === 'fastFingers') return fastFingersMaxPoints ?? 0;
+		if (isQcmLikeQuestionType(qType)) {
+			if (qType === 'deblur') {
+				const timeLeft = Number((gameState as BroadcastState | null)?.timer ?? 0);
+				return Number.isFinite(timeLeft) ? Math.max(0, Math.floor(timeLeft)) : 0;
+			}
+
+			return 10;
+		}
+
+		return null;
+	});
+
 	type ReviewFeedback = 'perfect' | 'partial' | 'wrong' | 'none';
 	const reviewFeedback = $derived.by<ReviewFeedback>(() => {
 		if (gameState?.status !== 'review') return 'none';
@@ -175,15 +197,8 @@
 			return 'none';
 		}
 
-		if (qType === 'estimate') {
-			const maxPts = estimateMaxPoints ?? 10;
-			if (myLastPoints >= maxPts && maxPts > 0) return 'perfect';
-			if (myLastPoints > 0) return 'partial';
-			return 'wrong';
-		}
-
-		if (qType === 'fastFingers') {
-			const maxPts = fastFingersMaxPoints ?? 0;
+		if (reviewMaxPoints !== null) {
+			const maxPts = reviewMaxPoints;
 			if (maxPts > 0 && myLastPoints >= maxPts) return 'perfect';
 			if (myLastPoints > 0) return 'partial';
 			return 'wrong';
@@ -548,9 +563,12 @@
 		class="flex h-full"
 		class:flex-col={!immersivePhoneShell}
 		class:mx-auto={!immersivePhoneShell}
-		class:max-w-md={!immersivePhoneShell}
-		class:px-4={!immersivePhoneShell}
-		class:py-4={!immersivePhoneShell}
+		class:max-w-md={!immersivePhoneShell && !useWideQuestionLayout}
+		class:max-w-6xl={useWideQuestionLayout}
+		class:px-4={!immersivePhoneShell && !useWideQuestionLayout}
+		class:px-6={useWideQuestionLayout}
+		class:py-4={!immersivePhoneShell && !useWideQuestionLayout}
+		class:py-5={useWideQuestionLayout}
 	>
 		{#if !immersivePhoneShell}
 			<header class="mb-4 flex items-center justify-end">
@@ -809,7 +827,7 @@
 						<p class="mt-1 text-sm text-emerald-100">Maximum de points !</p>
 					{:else if reviewFeedback === 'partial'}
 						<div class="text-4xl">🟨</div>
-						<h2 class="mt-2 text-2xl font-extrabold">Bien… mais pas parfait</h2>
+						<h2 class="mt-2 text-2xl font-extrabold">Bien, mais pas top !</h2>
 						<p class="mt-1 text-sm text-amber-100">C'etait proche, tu marques quand meme.</p>
 					{:else if reviewFeedback === 'wrong'}
 						<div class="text-4xl">❌</div>

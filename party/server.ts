@@ -824,6 +824,37 @@ export default class QuizServer implements Party.Server {
         return normalized;
     }
 
+    private normalizeSortingAnswers(value: unknown, options: string[]): string[] {
+        const rawValues = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+        const normalized: string[] = [];
+        const usedIndexes = new Set<number>();
+
+        for (const raw of rawValues) {
+            let optionIndex = -1;
+
+            if (typeof raw === 'number' && Number.isInteger(raw)) {
+                optionIndex = raw - 1;
+            } else if (typeof raw === 'string') {
+                const trimmed = raw.trim();
+                if (!trimmed) continue;
+
+                const parsed = Number(trimmed);
+                if (Number.isInteger(parsed)) {
+                    optionIndex = parsed - 1;
+                } else {
+                    optionIndex = options.findIndex((option) => option === trimmed);
+                }
+            }
+
+            if (optionIndex < 0 || optionIndex >= options.length || usedIndexes.has(optionIndex)) continue;
+
+            usedIndexes.add(optionIndex);
+            normalized.push(options[optionIndex]);
+        }
+
+        return normalized;
+    }
+
     private getQcmRoundBasePoints(q: any, submission: { timeLeft?: number } | undefined) {
         return String(q?.type || '') === 'deblur'
             ? Math.max(0, Math.floor(Number(submission?.timeLeft ?? 0)))
@@ -940,15 +971,16 @@ export default class QuizServer implements Party.Server {
                 return;
             }
 
-            // Sorting: strict order-insensitive equality against answers.
+            // Sorting: answers in data are 1-based indexes describing the exact player order.
             if (type === 'sorting') {
                 if (!Array.isArray(currentQ.answers)) return;
 
-                const correctAnswers = currentQ.answers.map(String);
-                const playerAns = Array.isArray(ans) ? ans.map(String) : [String(ans)];
+                const options = Array.isArray(currentQ.options) ? currentQ.options.map(String) : [];
+                const correctAnswers = this.normalizeSortingAnswers(currentQ.answers, options);
+                const playerAns = this.normalizeSortingAnswers(ans, options);
                 const isCorrect =
                     playerAns.length === correctAnswers.length &&
-                    playerAns.every(a => correctAnswers.includes(a));
+                    playerAns.every((answer, index) => answer === correctAnswers[index]);
 
                 const points = isCorrect ? 10 : 0;
                 this.state.players[pid].score += points;

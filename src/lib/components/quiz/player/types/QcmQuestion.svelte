@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import type { QuizOptionAnswer, QuizQuestionPerfectMatch, QuizQuestionQcm } from '$lib/quiz/types';
+	import type {
+		QuizOptionAnswer,
+		QuizQuestionDeblur,
+		QuizQuestionPerfectMatch,
+		QuizQuestionQcm
+	} from '$lib/quiz/types';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
 
 	function appPath(path: string) {
@@ -51,7 +56,7 @@
 	] as const;
 
 	type Props = {
-		question: QuizQuestionQcm | QuizQuestionPerfectMatch;
+		question: QuizQuestionQcm | QuizQuestionDeblur | QuizQuestionPerfectMatch;
 		value: QuizOptionAnswer | QuizOptionAnswer[] | null;
 		onChange: (next: QuizOptionAnswer | QuizOptionAnswer[] | null) => void;
 		embeddedInPhoneShell?: boolean;

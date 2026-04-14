@@ -45,9 +45,15 @@ export function getAppBasePathFromScripts(options: { appMarker?: string } = {}):
 	}
 
 	try {
-		const scripts = Array.from(document.querySelectorAll('script[src]')) as HTMLScriptElement[];
-		for (const s of scripts) {
-			const raw = s.getAttribute('src');
+		const assetElements = Array.from(
+			document.querySelectorAll('script[src], link[href][rel="modulepreload"], link[href][rel="stylesheet"]')
+		) as Array<HTMLScriptElement | HTMLLinkElement>;
+
+		for (const assetElement of assetElements) {
+			const raw =
+				assetElement instanceof HTMLLinkElement
+					? assetElement.getAttribute('href')
+					: assetElement.getAttribute('src');
 			if (!raw) continue;
 			const url = new URL(raw, location.href);
 			const p = url.pathname;

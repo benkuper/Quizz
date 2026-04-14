@@ -16,6 +16,7 @@
 		isPassiveQuestionType
 	} from '$lib/quiz/questionTypes';
 	import { resolveAppAssetUrl } from '$lib/utils/paths.svelte';
+	import type { BroadcastState } from '$lib/quiz/types';
 
 	type FocusedOptionOverlayData = {
 		label?: string;
@@ -23,7 +24,7 @@
 		imageSrc: string;
 	};
 
-	let gameState: any = $state(null);
+	let gameState: BroadcastState | null = $state(null);
 	let socket: PartySocket | null = $state(null);
 	let lastAutoAdvanceQuestionId: string | null = $state(null);
 	let joinQrDataUrl: string | null = $state(null);
@@ -61,8 +62,14 @@
 	const wrongPlayers = $derived.by(() => playersList.filter((p: any) => p.lastCorrect === false));
 	const showPlayers = $derived.by(() => {
 		if (isPassiveQuestionType(gameState?.question?.type)) return false;
-		return gameState?.status == 'reveal' || gameState?.status === 'question' || gameState?.status === 'review';
+		return (
+			gameState?.status === 'lobby' ||
+			gameState?.status === 'question' ||
+			gameState?.status === 'reveal' ||
+			gameState?.status === 'review'
+		);
 	});
+	const decorationsLit = $derived.by(() => !Boolean(gameState?.question?.nolight));
 
 	let sign1Text: string = $state('SNACKS');
 	let sign2Text: string = $state('HOT DOGS');
@@ -251,12 +258,16 @@
 	function handleFocusImageChange(payload: FocusedOptionOverlayData | null) {
 		focusedOptionOverlay = payload;
 	}
+
+	const projectorScreenOverlayProps: any = {
+		onFocusImageChange: handleFocusImageChange
+	};
 </script>
 
 <main class="projector" style="--scale:{projectorScale};">
 	<img
 		class="full"
-		src={appPath('/projector/drivein.png')}
+			src={appPath('/projector/drivein.png')}
 		style="--screen-opacity:{screenOpacity};"
 		alt=""
 		aria-hidden="true"
@@ -269,7 +280,7 @@
 			{correctPlayers}
 			{wrongPlayers}
 			{sortedPlayers}
-			onFocusImageChange={handleFocusImageChange}
+			{...projectorScreenOverlayProps}
 			onPassiveFinished={handlePassiveFinished}
 		/>
 	</div>
@@ -292,14 +303,14 @@
 			{/if}
 		</div> -->
 	</div>
-	<img class="erics" src={appPath('/projector/erics.png')} alt="" aria-hidden="true" />
-	<img class="sign" src={appPath('/projector/sign.png')} alt="" aria-hidden="true" />
-	<img class="fleche" src={appPath('/projector/fleche.png')} alt="" aria-hidden="true" />
+	<img class="erics" class:unlit={!decorationsLit} src={appPath('/projector/erics.png')} alt="" aria-hidden="true" />
+	<img class="sign" class:unlit={!decorationsLit} src={appPath('/projector/sign.png')} alt="" aria-hidden="true" />
+	<img class="fleche" class:unlit={!decorationsLit} src={appPath('/projector/fleche.png')} alt="" aria-hidden="true" />
 
-	<SignContainer text={sign1Text} variant="yellow" x={51} y={-58.5} size={1.3} flicker={5}
+	<SignContainer text={sign1Text} variant="yellow" x={51} y={-58.5} size={1.3} flicker={5} lit={decorationsLit}
 	></SignContainer>
-	<SignContainer text={sign2Text} variant="red" x={51} y={-51} size={1} flicker={6}></SignContainer>
-	<SignContainer text={sign3Text} variant="blue" x={51} y={-43.8} size={0.9} flicker={7}
+	<SignContainer text={sign2Text} variant="red" x={51} y={-51} size={1} flicker={6} lit={decorationsLit}></SignContainer>
+	<SignContainer text={sign3Text} variant="blue" x={51} y={-43.8} size={0.9} flicker={7} lit={decorationsLit}
 	></SignContainer>
 	<img
 		class="beam full"
@@ -358,7 +369,13 @@
 		left: 50px;
 		opacity: 0;
 		animation: erics-pulse 6s ease-in-out infinite;
+		transition: opacity 180ms ease;
 		will-change: opacity;
+	}
+
+	img.erics.unlit {
+		opacity: 0;
+		animation: none;
 	}
 
 	@keyframes erics-pulse {
@@ -405,8 +422,14 @@
 		top: 457px;
 		left: 108px;
 		animation: sign-blink 10s step-end infinite;
+		transition: opacity 180ms ease;
 
 		will-change: opacity;
+	}
+
+	img.sign.unlit {
+		opacity: 0;
+		animation: none;
 	}
 
 	@keyframes sign-blink {
@@ -425,6 +448,7 @@
 		position: absolute;
 		top: 532px;
 		left: 136px;
+		transition: opacity 180ms ease;
 
 		-webkit-mask-image: linear-gradient(
 			90deg,
@@ -447,6 +471,13 @@
 
 		animation: fleche-opacity-wipe 1s linear infinite;
 		will-change: mask-position;
+	}
+
+	img.fleche.unlit {
+		opacity: 0;
+		animation: none;
+		-webkit-mask-image: none;
+		mask-image: none;
 	}
 
 	@keyframes fleche-opacity-wipe {

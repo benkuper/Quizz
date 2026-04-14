@@ -2,6 +2,7 @@
 	import type { GameStatus, KaraokePlaybackSync, QuizQuestion } from '$lib/quiz/types';
 	import { isQcmLikeQuestionType } from '$lib/quiz/questionTypes';
 	import QcmQuestion from './types/QcmQuestion.svelte';
+	import DeblurQuestion from './types/DeblurQuestion.svelte';
 	import EstimateQuestion from './types/EstimateQuestion.svelte';
 	import FastFingersQuestion from './types/FastFingersQuestion.svelte';
 	import SortingQuestion from './types/SortingQuestion.svelte';
@@ -27,6 +28,8 @@
 <div class="question-renderer">
 	{#if !question}
 		<div class="rounded-2xl bg-slate-900 p-4 text-center text-slate-200">Chargement…</div>
+	{:else if type === 'deblur'}
+		<DeblurQuestion question={question as any} value={value as any} onChange={onChange as any} />
 	{:else if isQcmLikeQuestionType(type)}
 		<QcmQuestion question={question as any} value={value as any} onChange={onChange as any} />
 	{:else if type === 'estimate'}

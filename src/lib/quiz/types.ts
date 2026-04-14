@@ -5,6 +5,7 @@ export type QuizQuestionBase = {
 	type: string;
 	question: string | string[];
 	separateReveal?: boolean;
+	nolight?: boolean;
 	// Optional audio cue played on players' phones when the question appears.
 	// Recommended: a relative URL like "media/my-sound.mp3" so subfolder deploys work.
 	introSound?: string;
@@ -44,7 +45,7 @@ export type QuizQuestionPerfectMatch = QuizQuestionBase & {
 export type QuizQuestionSorting = QuizQuestionBase & {
 	type: 'sorting';
 	options: string[];
-	answers?: string[];
+	answers?: QuizOptionAnswer[];
 };
 
 export type QuizQuestionBurger = QuizQuestionBase & {

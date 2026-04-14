@@ -327,6 +327,14 @@
 		letter-spacing: 0.08em;
 	}
 
+	.reveal-board.has-large-text:not(.is-sidebar) .option-text {
+		font-size: clamp(3.35rem, 4.7vw, 4rem);
+	}
+
+	.reveal-board.has-large-text:not(.is-sidebar) .slot-placeholder {
+		font-size: clamp(1.7rem, 2.2vw, 2.1rem);
+	}
+
 	.focus-stage {
 		position: absolute;
 		inset: 0;
@@ -446,35 +454,47 @@
 	}
 
 	.reveal-board.is-sidebar .focus-stage {
-		place-items: start stretch;
+		place-items: center stretch;
 		padding-top: 0;
 	}
 
 	.reveal-board.is-sidebar .focus-card {
 		width: 100%;
-		min-height: clamp(2.7rem, 5.3vh, 3.8rem);
-		padding: 0.45rem 0.55rem;
+		min-height: clamp(3.4rem, 6vh, 4.8rem);
+		padding: 0.55rem 0.7rem;
 	}
 
 	.reveal-board.is-sidebar .focus-card .option-body {
 		padding-left: 2.1rem;
 	}
 
+	.reveal-board.is-sidebar .focus-card .option-body.has-image {
+		flex-direction: row;
+		align-items: center;
+		text-align: left;
+	}
+
+	.reveal-board.is-sidebar .focus-image-shell {
+		width: min(26vw, 11rem);
+		height: clamp(4.6rem, 10vh, 7rem);
+	}
+
 	.reveal-board.is-sidebar.has-large-text .option-label {
-		font-size: clamp(0.92rem, 1.45vw, 1.15rem);
+		font-size: clamp(1.1rem, 1.9vw, 1.45rem);
 	}
 
 	.reveal-board.is-sidebar.has-large-text .option-text {
-		font-size: clamp(1.15rem, 2vw, 1.7rem);
-		line-height: 1.04;
+		font-size: clamp(1.75rem, 3.4vw, 2.8rem);
+		line-height: 1.1;
 	}
 
 	.reveal-board.is-sidebar.has-large-text .has-image .option-text {
-		font-size: clamp(1rem, 1.65vw, 1.3rem);
+		font-size: clamp(1.45rem, 2.5vw, 2rem);
+		line-height: 1.08;
 	}
 
 	.reveal-board.is-sidebar.has-large-text .slot-placeholder {
-		font-size: clamp(1rem, 1.55vw, 1.25rem);
+		font-size: clamp(1.25rem, 2.2vw, 1.7rem);
 	}
 
 	@media (max-width: 60rem) {

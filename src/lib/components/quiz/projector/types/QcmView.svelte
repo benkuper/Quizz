@@ -19,9 +19,10 @@
 		optionReveal?: OptionRevealState;
 		onFocusImageChange?: (payload: FocusedOptionOverlayData | null) => void;
 		layout?: 'grid' | 'sidebar';
+		textScale?: 'default' | 'large';
 	};
 
-	let { status, question, optionReveal, onFocusImageChange, layout = 'grid' }: Props = $props();
+	let { status, question, optionReveal, onFocusImageChange, layout = 'grid', textScale = 'default' }: Props = $props();
 	let optionImages = $state<Array<string | null>>([]);
 
 	function completedReveal(totalOptions: number): OptionRevealState {
@@ -101,6 +102,7 @@
 		labels={optionLabels}
 		optionImages={optionImages}
 		{layout}
+		{textScale}
 		showLabels
 		slotStates={reviewSlotStates}
 		onFocusImageChange={onFocusImageChange}
